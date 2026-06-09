@@ -1,0 +1,22 @@
+{
+  "name": "hawk2ui-vue-plugin",
+  "private": true,
+  "type": "module",
+  "packageManager": "bun@1.0.0",
+  "scripts": {
+    "bundle": "vite build --config vite.hawk.config.ts",
+    "build": "vite build --config vite.hawk.config.ts",
+    "build:artifact": "hawk2ui build-release",
+    "dev": "hawk2ui dev",
+    "validate": "hawk2ui validate"
+  },
+  "dependencies": {
+    "@hawk2ui/vue": "^0.1.0",
+    "vue": "^3.5.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.0.0",
+    "typescript": "^5.0.0",
+    "vite": "^6.0.0"
+  }
+}
