@@ -1,4 +1,5 @@
 import type { PanelState } from "./workspace";
+import type { EditorDocument } from "./documents";
 
 export type WorkbenchPanelName = "project" | "assistant" | "docs" | "editorSettings" | "chatSettings";
 export type DrawerTab = "terminal" | "logs" | "debug" | "problems";
@@ -6,15 +7,7 @@ export type DrawerMode = "collapsed" | "compact" | "expanded";
 export type StatusTone = "ok" | "warn" | "error" | "muted";
 export type PreviewStateName = "stopped" | "starting" | "running" | "failed";
 
-export interface EditorTab {
-  id: string;
-  title: string;
-  path: string;
-  language: "vue" | "markdown" | "typescript" | "json" | "css";
-  dirty: boolean;
-  readOnly: boolean;
-  kind: "file" | "doc" | "settings";
-}
+export type EditorTab = EditorDocument;
 
 export interface DrawerState {
   mode: DrawerMode;
@@ -56,6 +49,7 @@ export function createWorkbenchState(projectRoot: string): WorkbenchState {
       dirty: false,
       readOnly: false,
       kind: "file",
+      content: "<script setup lang=\"ts\">\nconst workbench = \"ready\";\n</script>",
     },
     {
       id: "doc:manual/README.md",
@@ -65,6 +59,7 @@ export function createWorkbenchState(projectRoot: string): WorkbenchState {
       dirty: false,
       readOnly: true,
       kind: "doc",
+      content: "# Hawk2UI Manual",
     },
   ];
 

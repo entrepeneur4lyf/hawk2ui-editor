@@ -40,9 +40,17 @@ const tabs: DrawerTab[] = ["terminal", "logs", "debug", "problems"];
       <hawk-text v-if="activeTab === 'terminal'" id="drawer-terminal" class="mono">
         $ hawk2ui-cli dev
       </hawk-text>
-      <hawk-text v-if="activeTab === 'logs'" id="drawer-logs" class="mono">
-        {{ previewStatusLabel(preview) }}
-      </hawk-text>
+      <hawk-view v-if="activeTab === 'logs'" id="drawer-log-list">
+        <hawk-text id="drawer-logs" class="mono">{{ previewStatusLabel(preview) }}</hawk-text>
+        <hawk-text
+          v-for="(line, index) in preview.output"
+          :id="`drawer-log-${index}`"
+          :key="`${index}-${line}`"
+          class="mono"
+        >
+          {{ line }}
+        </hawk-text>
+      </hawk-view>
       <hawk-view v-if="activeTab === 'debug'" id="drawer-debug">
         <hawk-text id="drawer-debug-preview" class="mono">{{ preview.command }}</hawk-text>
         <hawk-button id="drawer-run-preview" @pointer-press="emit('startPreview')">Run</hawk-button>

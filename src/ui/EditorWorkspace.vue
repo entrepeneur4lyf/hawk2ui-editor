@@ -1,9 +1,9 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import type { EditorTab } from "../core/workbench";
+import type { EditorDocument } from "../core/documents";
 
 const props = defineProps<{
-  tabs: EditorTab[];
+  tabs: EditorDocument[];
   activeTabId: string;
   sidecarAvailable: boolean;
 }>();
@@ -18,14 +18,18 @@ const activeTab = computed(() => {
   return props.tabs.find((tab) => tab.id === props.activeTabId) ?? props.tabs[0];
 });
 
-function tabState(tab: EditorTab): string {
+const contentLines = computed(() => {
+  return (activeTab.value?.content ?? "").split("\n").slice(0, 18);
+});
+
+function tabState(tab: EditorDocument): string {
   const flags = [tab.language];
   if (tab.readOnly) flags.push("read-only");
   if (tab.dirty) flags.push("dirty");
   return flags.join(" / ");
 }
 
-function tabDomId(tab: EditorTab): string {
+function tabDomId(tab: EditorDocument): string {
   return `editor-tab-${tab.id.replace(/[^A-Za-z0-9_-]/g, "-")}`;
 }
 </script>
@@ -51,11 +55,14 @@ function tabDomId(tab: EditorTab): string {
       </hawk-view>
 
       <hawk-view id="editor-buffer" class="editor-buffer">
-        <hawk-text id="editor-line-1" class="code-line">1  &lt;script setup lang="ts"&gt;</hawk-text>
-        <hawk-text id="editor-line-2" class="code-line">2  import {{ "{" }} ref {{ "}" }} from "vue";</hawk-text>
-        <hawk-text id="editor-line-3" class="code-line">3</hawk-text>
-        <hawk-text id="editor-line-4" class="code-line">4  const workbench = ref("ready");</hawk-text>
-        <hawk-text id="editor-line-5" class="code-line">5  &lt;/script&gt;</hawk-text>
+        <hawk-text
+          v-for="(line, index) in contentLines"
+          :id="`editor-line-${index + 1}`"
+          :key="`${activeTab.id}-${index}`"
+          class="code-line"
+        >
+          {{ index + 1 }}  {{ line }}
+        </hawk-text>
       </hawk-view>
 
       <hawk-view id="editor-actions" class="editor-actions">

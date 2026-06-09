@@ -4,6 +4,14 @@ import type { DocsSource } from "../docs/githubDocs";
 defineProps<{
   source: DocsSource;
 }>();
+
+const emit = defineEmits<{
+  openDoc: [path: string];
+}>();
+
+function docId(path: string): string {
+  return `docs-entry-${path.replace(/[^A-Za-z0-9_-]/g, "-")}`;
+}
 </script>
 
 <template>
@@ -13,6 +21,13 @@ defineProps<{
       {{ source.owner }}/{{ source.repo }}@{{ source.ref }}
     </hawk-text>
     <hawk-button id="docs-refresh">Refresh</hawk-button>
-    <hawk-text id="docs-content">manual/README.md will load through the bridge.</hawk-text>
+    <hawk-button
+      v-for="path in source.paths"
+      :id="docId(path)"
+      :key="path"
+      @pointer-press="emit('openDoc', path)"
+    >
+      {{ path }}
+    </hawk-button>
   </hawk-view>
 </template>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { computed, onMounted, ref } from "vue";
 import AssistantPanel from "./ui/AssistantPanel.vue";
 import BottomDrawer from "./ui/BottomDrawer.vue";
 import DocsPanel from "./ui/DocsPanel.vue";
@@ -11,7 +11,14 @@ import StatusBar from "./ui/StatusBar.vue";
 import { activeProfile, defaultWorkspaceDocument, type PanelState } from "./core/workspace";
 import { summarizeHawkManifest } from "./core/project";
 import {
-  activeEditorTab,
+  activeDocument,
+  createDocumentState,
+  markDocumentSaved,
+  openDocsDocument,
+  openFileDocument,
+  selectDocument,
+} from "./core/documents";
+import {
   createWorkbenchState,
   selectDrawerTab,
   setDrawerMode,
@@ -22,9 +29,24 @@ import {
   type WorkbenchPanelName,
 } from "./core/workbench";
 import type { PreviewStatus } from "./preview/previewClient";
+import type { ProjectTreeEntry } from "./bridge/files";
 
 const workspace = ref(defaultWorkspaceDocument("/home/shawn/workspace/hawk2ui-editor"));
 const workbench = ref(createWorkbenchState(workspace.value.project.root));
+const documents = ref(createDocumentState(workbench.value.editorTabs, workbench.value.activeEditorTabId));
+const projectTree = ref<ProjectTreeEntry[]>([
+  { name: "hawk.json", path: "hawk.json", type: "file" },
+  {
+    name: "src",
+    path: "src",
+    type: "directory",
+    children: [
+      { name: "App.vue", path: "src/App.vue", type: "file" },
+      { name: "main.ts", path: "src/main.ts", type: "file" },
+    ],
+  },
+  { name: "README.md", path: "README.md", type: "file" },
+]);
 const project = summarizeHawkManifest(
   workspace.value.project.root,
   JSON.stringify({
@@ -40,8 +62,13 @@ const preview = ref<PreviewStatus>({
   output: [],
 });
 const profile = computed(() => activeProfile(workspace.value));
-const activeTab = computed(() => activeEditorTab(workbench.value));
+const activeTab = computed(() => activeDocument(documents.value));
 const statusItems = computed(() => statusItemsWithPreview(workbench.value.statusItems, preview.value.state));
+
+onMounted(() => {
+  void refreshProjectTree();
+  void openProjectFile("src/App.vue");
+});
 
 function closePanel(name: WorkbenchPanelName) {
   const panels = workbench.value.panels;
@@ -63,13 +90,27 @@ function toggleWorkbenchPanel(name: WorkbenchPanelName) {
 }
 
 function setActiveEditorTab(id: string) {
-  workbench.value.activeEditorTabId = id;
+  documents.value = selectDocument(documents.value, id);
 }
 
-function saveEditorTab(id: string) {
-  workbench.value.editorTabs = workbench.value.editorTabs.map((tab) => {
-    return tab.id === id ? { ...tab, dirty: false } : tab;
-  });
+async function saveEditorTab(id: string) {
+  const document = documents.value.documents.find((candidate) => candidate.id === id);
+  if (!document) return;
+  if (document.readOnly) {
+    appendLog(`save skipped for read-only document: ${document.path}`);
+    return;
+  }
+
+  try {
+    await bridgeJson("/files/write", {
+      method: "POST",
+      body: JSON.stringify({ root: workspace.value.project.root, path: document.path, content: document.content }),
+    });
+    documents.value = markDocumentSaved(documents.value, id);
+    appendLog(`saved ${document.path}`);
+  } catch (error) {
+    appendLog(error instanceof Error ? error.message : `save failed: ${document.path}`);
+  }
 }
 
 function requestSidecar(path: string) {
@@ -83,6 +124,67 @@ function setDrawer(mode: DrawerMode) {
 
 function selectDrawer(tab: DrawerTab) {
   workbench.value.drawer = selectDrawerTab(workbench.value.drawer, tab);
+}
+
+async function refreshProjectTree() {
+  try {
+    const response = await bridgeJson<{ entries: ProjectTreeEntry[] }>(
+      `/project/tree?root=${encodeURIComponent(workspace.value.project.root)}`,
+    );
+    projectTree.value = response.entries;
+    setStatusItem("bridge", "connected", "ok");
+  } catch (error) {
+    setStatusItem("bridge", "disconnected", "warn");
+    appendLog(error instanceof Error ? error.message : "project tree unavailable");
+  }
+}
+
+async function openProjectFile(path: string) {
+  try {
+    const file = await bridgeJson<{ path: string; content: string }>(
+      `/files/read?root=${encodeURIComponent(workspace.value.project.root)}&path=${encodeURIComponent(path)}`,
+    );
+    documents.value = openFileDocument(documents.value, file.path, file.content);
+    setStatusItem("bridge", "connected", "ok");
+  } catch (error) {
+    documents.value = openFileDocument(documents.value, path, `Bridge unavailable while loading ${path}.`);
+    setStatusItem("bridge", "disconnected", "warn");
+    appendLog(error instanceof Error ? error.message : `file unavailable: ${path}`);
+  }
+}
+
+async function openDoc(path: string) {
+  try {
+    const page = await bridgeJson<{ path: string; markdown: string }>("/docs/page", {
+      method: "POST",
+      body: JSON.stringify({ source: workspace.value.docs.source, path }),
+    });
+    documents.value = openDocsDocument(documents.value, page.path, page.markdown);
+    setStatusItem("bridge", "connected", "ok");
+  } catch (error) {
+    documents.value = openDocsDocument(documents.value, path, `# ${path}\n\nBridge docs unavailable.`);
+    appendLog(error instanceof Error ? error.message : `docs unavailable: ${path}`);
+  }
+}
+
+async function bridgeJson<T>(path: string, init: RequestInit = {}): Promise<T> {
+  const response = await fetch(`${workspace.value.bridge.baseURL}${path}`, {
+    ...init,
+    headers: { "content-type": "application/json", ...(init.headers ?? {}) },
+  });
+  if (!response.ok) throw new Error(`bridge request failed: ${response.status}`);
+  return response.json() as Promise<T>;
+}
+
+function appendLog(message: string) {
+  preview.value.output = [...preview.value.output, message].slice(-30);
+  workbench.value.drawer = selectDrawerTab(setDrawerMode(workbench.value.drawer, "compact"), "logs");
+}
+
+function setStatusItem(id: string, value: string, tone: "ok" | "warn" | "error" | "muted") {
+  workbench.value.statusItems = workbench.value.statusItems.map((item) => {
+    return item.id === id ? { ...item, value, tone } : item;
+  });
 }
 </script>
 
@@ -119,8 +221,8 @@ function selectDrawer(tab: DrawerTab) {
 
     <hawk-view id="workspace" class="workspace">
       <EditorWorkspace
-        :tabs="workbench.editorTabs"
-        :active-tab-id="workbench.activeEditorTabId"
+        :tabs="documents.documents"
+        :active-tab-id="documents.activeDocumentId ?? ''"
         :sidecar-available="false"
         @select="setActiveEditorTab"
         @save="saveEditorTab"
@@ -148,7 +250,7 @@ function selectDrawer(tab: DrawerTab) {
       @close="closePanel('project')"
       @nudge="(dx, dy) => nudgePanel('project', dx, dy)"
     >
-      <ProjectPanel :project="project" />
+      <ProjectPanel :project="project" :tree="projectTree" @open-file="openProjectFile" @open-sidecar="requestSidecar" />
     </HawkFloatingPanel>
 
     <HawkFloatingPanel
@@ -170,7 +272,7 @@ function selectDrawer(tab: DrawerTab) {
       @close="closePanel('docs')"
       @nudge="(dx, dy) => nudgePanel('docs', dx, dy)"
     >
-      <DocsPanel :source="workspace.docs.source" />
+      <DocsPanel :source="workspace.docs.source" @open-doc="openDoc" />
     </HawkFloatingPanel>
 
     <HawkFloatingPanel
