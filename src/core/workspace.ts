@@ -1,3 +1,5 @@
+import { defaultWorkbenchPanels } from "./workbench";
+
 export type AssistantCapability =
   | "chat"
   | "docs-qa"
@@ -107,11 +109,7 @@ export function defaultWorkspaceDocument(root: string): WorkspaceDocument {
       ],
     },
     editor: { theme: "system", layout: "default" },
-    panels: {
-      assistant: { open: true, x: 24, y: 24, width: 420, height: 620 },
-      docs: { open: true, x: 468, y: 24, width: 520, height: 620 },
-      preview: { open: true, x: 1008, y: 24, width: 240, height: 300 },
-    },
+    panels: defaultWorkbenchPanels(),
     docs: {
       source: {
         type: "github",

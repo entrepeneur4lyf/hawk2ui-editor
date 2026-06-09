@@ -1,6 +1,7 @@
 .editor-root {
   background-color: token(color.surface);
   color: #f4f7fb;
+  font-size: 13px;
 }
 
 .topbar {
@@ -8,6 +9,30 @@
 }
 
 .workspace {
+  background-color: token(color.surface);
+}
+
+.editor-workspace {
+  background-color: token(color.surface);
+}
+
+.editor-tabs {
+  background-color: token(color.surface);
+}
+
+.editor-buffer {
+  background-color: token(color.surface);
+}
+
+.bottom-drawer {
+  background-color: token(color.surface);
+}
+
+.drawer-toolbar {
+  background-color: token(color.surface);
+}
+
+.status-bar {
   background-color: token(color.surface);
 }
 
@@ -25,6 +50,14 @@
   color: #9aa6b2;
 }
 
+.mono {
+  color: #d6deeb;
+}
+
+.code-line {
+  color: #d6deeb;
+}
+
 .status-ok {
   color: #65d18f;
 }
@@ -35,4 +68,8 @@
 
 .status-error {
   color: #ff7b7b;
+}
+
+.status-muted {
+  color: #9aa6b2;
 }

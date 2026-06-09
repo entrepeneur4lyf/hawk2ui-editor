@@ -1,0 +1,72 @@
+<script setup lang="ts">
+import { computed } from "vue";
+import type { EditorTab } from "../core/workbench";
+
+const props = defineProps<{
+  tabs: EditorTab[];
+  activeTabId: string;
+  sidecarAvailable: boolean;
+}>();
+
+const emit = defineEmits<{
+  select: [id: string];
+  save: [id: string];
+  openSidecar: [path: string];
+}>();
+
+const activeTab = computed(() => {
+  return props.tabs.find((tab) => tab.id === props.activeTabId) ?? props.tabs[0];
+});
+
+function tabState(tab: EditorTab): string {
+  const flags = [tab.language];
+  if (tab.readOnly) flags.push("read-only");
+  if (tab.dirty) flags.push("dirty");
+  return flags.join(" / ");
+}
+
+function tabDomId(tab: EditorTab): string {
+  return `editor-tab-${tab.id.replace(/[^A-Za-z0-9_-]/g, "-")}`;
+}
+</script>
+
+<template>
+  <hawk-view id="editor-workspace" class="editor-workspace">
+    <hawk-view id="editor-tabs" class="editor-tabs">
+      <hawk-button
+        v-for="tab in tabs"
+        :id="tabDomId(tab)"
+        :key="tab.id"
+        class="editor-tab"
+        @pointer-press="emit('select', tab.id)"
+      >
+        {{ tab.dirty ? "* " : "" }}{{ tab.title }}
+      </hawk-button>
+    </hawk-view>
+
+    <hawk-view v-if="activeTab" id="editor-surface" class="editor-surface">
+      <hawk-view id="editor-meta" class="editor-meta">
+        <hawk-text id="editor-path">{{ activeTab.path }}</hawk-text>
+        <hawk-text id="editor-language" class="muted">{{ tabState(activeTab) }}</hawk-text>
+      </hawk-view>
+
+      <hawk-view id="editor-buffer" class="editor-buffer">
+        <hawk-text id="editor-line-1" class="code-line">1  &lt;script setup lang="ts"&gt;</hawk-text>
+        <hawk-text id="editor-line-2" class="code-line">2  import {{ "{" }} ref {{ "}" }} from "vue";</hawk-text>
+        <hawk-text id="editor-line-3" class="code-line">3</hawk-text>
+        <hawk-text id="editor-line-4" class="code-line">4  const workbench = ref("ready");</hawk-text>
+        <hawk-text id="editor-line-5" class="code-line">5  &lt;/script&gt;</hawk-text>
+      </hawk-view>
+
+      <hawk-view id="editor-actions" class="editor-actions">
+        <hawk-button id="editor-save-active" @pointer-press="emit('save', activeTab.id)">Save</hawk-button>
+        <hawk-button id="editor-open-sidecar" @pointer-press="emit('openSidecar', activeTab.path)">
+          Open Sidecar
+        </hawk-button>
+        <hawk-text id="editor-sidecar-state" class="muted">
+          {{ sidecarAvailable ? "sidecar enabled" : "sidecar disabled" }}
+        </hawk-text>
+      </hawk-view>
+    </hawk-view>
+  </hawk-view>
+</template>

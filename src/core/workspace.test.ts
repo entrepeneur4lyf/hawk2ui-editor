@@ -23,6 +23,19 @@ describe("workspace.hawk", () => {
     expect(parsed).toEqual(workspace);
   });
 
+  test("defaults to floating panels for the workbench shell", () => {
+    const workspace = defaultWorkspaceDocument("/tmp/project");
+
+    expect(Object.keys(workspace.panels).sort()).toEqual([
+      "assistant",
+      "chatSettings",
+      "docs",
+      "editorSettings",
+      "project",
+    ]);
+    expect(workspace.panels.project.open).toBe(true);
+  });
+
   test("rejects raw api keys in openai-compatible profiles", () => {
     const workspace = defaultWorkspaceDocument("/tmp/project");
     workspace.ai.profiles = [
