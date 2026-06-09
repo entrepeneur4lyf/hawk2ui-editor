@@ -51,3 +51,16 @@ describe("bridge file routes", () => {
     expect(await readFile(join(root, "src", "App.vue"), "utf8")).toBe("<template><hawk-view /></template>");
   });
 });
+
+describe("bridge editor sidecar routes", () => {
+  test("closes the editor sidecar", async () => {
+    const response = await handleBridgeRequest(new Request("http://bridge/editor/close", { method: "POST" }));
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toEqual({
+      state: "closed",
+      filePath: null,
+      message: "Editor sidecar is closed.",
+    });
+  });
+});

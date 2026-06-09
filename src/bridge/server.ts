@@ -2,7 +2,7 @@ import { fetchDocsPage } from "./docs";
 import { listProjectTree, readProjectFile, writeProjectFile } from "./files";
 import { currentPreviewStatus, startPreview, stopPreview } from "./preview";
 import { streamAssistantText } from "./assistant";
-import { currentEditorSidecarState, openEditorSidecar } from "./webviewEditor";
+import { closeEditorSidecar, currentEditorSidecarState, openEditorSidecar } from "./webviewEditor";
 
 const port = Number(process.env.HAWK2UI_EDITOR_BRIDGE_PORT ?? "47321");
 
@@ -60,7 +60,14 @@ export async function handleBridgeRequest(request: Request): Promise<Response> {
 
     if (request.method === "POST" && url.pathname === "/editor/open") {
       const body = await request.json();
-      return json(await openEditorSidecar(String(body.filePath)));
+      if (body.root && body.path) {
+        return json(await openEditorSidecar(String(body.root), String(body.path)));
+      }
+      return json(await openEditorSidecar(process.cwd(), String(body.filePath)));
+    }
+
+    if (request.method === "POST" && url.pathname === "/editor/close") {
+      return json(closeEditorSidecar());
     }
 
     if (request.method === "POST" && url.pathname === "/assistant/stream") {

@@ -1,8 +1,11 @@
-import { readFileSync, writeFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 import { Application, Theme, WebviewApplicationEvent } from "@webviewjs/webview";
+import { writeProjectFile } from "./files";
 
 interface EditorSidecarPayload {
+  projectRoot: string;
+  relativePath: string;
   filePath: string;
   initialText: string;
   scriptPath: string;
@@ -35,8 +38,14 @@ const webview = window.createWebview({
 webview.onIpcMessage((event) => {
   const message = JSON.parse(event.body.toString("utf8")) as { type: string; text?: string };
   if (message.type === "save" && typeof message.text === "string") {
-    writeFileSync(payload.filePath, message.text);
-    webview.evaluateScript("window.__hawkEditorSaved && window.__hawkEditorSaved()");
+    void writeProjectFile(payload.projectRoot, payload.relativePath, message.text)
+      .then(() => {
+        webview.evaluateScript("window.__hawkEditorSaved && window.__hawkEditorSaved()");
+      })
+      .catch((error) => {
+        const messageText = error instanceof Error ? error.message : "Save failed.";
+        webview.evaluateScript(`window.__hawkEditorError && window.__hawkEditorError(${JSON.stringify(messageText)})`);
+      });
   }
 });
 

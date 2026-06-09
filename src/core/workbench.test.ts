@@ -16,6 +16,7 @@ describe("workbench shell", () => {
     expect(state.activeEditorTabId).toBe("file:src/App.vue");
     expect(state.drawer).toEqual({ mode: "compact", activeTab: "logs" });
     expect(state.statusItems.map((item) => item.id)).toContain("bridge");
+    expect(state.statusItems.map((item) => item.id)).toContain("sidecar");
   });
 
   test("toggles recoverable floating panels without sidebars", () => {

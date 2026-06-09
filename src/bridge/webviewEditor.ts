@@ -1,5 +1,6 @@
-import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, statSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
+import { readProjectFile, resolveProjectPath } from "./files";
 
 export interface EditorSidecarState {
   state: "closed" | "opening" | "open" | "failed";
@@ -8,6 +9,8 @@ export interface EditorSidecarState {
 }
 
 interface EditorSidecarPayload {
+  projectRoot: string;
+  relativePath: string;
   filePath: string;
   initialText: string;
   scriptPath: string;
@@ -25,8 +28,26 @@ export function currentEditorSidecarState(): EditorSidecarState {
   return { ...state };
 }
 
-export async function openEditorSidecar(filePath: string): Promise<EditorSidecarState> {
-  const resolved = resolve(filePath);
+export function closeEditorSidecar(): EditorSidecarState {
+  activeProcess?.kill();
+  activeProcess = null;
+  state = { state: "closed", filePath: null, message: "Editor sidecar is closed." };
+  return currentEditorSidecarState();
+}
+
+export async function openEditorSidecar(projectRoot: string, relativePath: string): Promise<EditorSidecarState> {
+  let resolved: string;
+  try {
+    resolved = resolveProjectPath(projectRoot, relativePath);
+  } catch (error) {
+    state = {
+      state: "failed",
+      filePath: null,
+      message: error instanceof Error ? error.message : "Invalid editor sidecar path.",
+    };
+    return currentEditorSidecarState();
+  }
+
   if (process.env.HAWK2UI_EDITOR_WEBVIEW_SIDECAR !== "1") {
     state = {
       state: "failed",
@@ -51,9 +72,12 @@ export async function openEditorSidecar(filePath: string): Promise<EditorSidecar
   try {
     await verifyWebviewBinding();
     const scriptPath = await buildWebviewEditorBundle();
+    const file = await readProjectFile(projectRoot, relativePath);
     const payloadPath = writeEditorPayload({
+      projectRoot,
+      relativePath,
       filePath: resolved,
-      initialText: readFileSync(resolved, "utf8"),
+      initialText: file.content,
       scriptPath,
     });
 

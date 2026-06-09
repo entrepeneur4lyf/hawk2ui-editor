@@ -24,3 +24,15 @@ HAWK2UI_EDITOR_WEBVIEW_SIDECAR=1 bun run bridge
 ```
 
 On the current Linux x64 test environment, `@webviewjs/webview@0.1.4` installs but its optional Linux native package is missing from npm, so the bridge reports a clear sidecar failure instead of launching an empty window.
+
+When testing the Hawk2UI-specific WebviewJS fork locally, use the generated Linux x64 tarball as a disposable install artifact. Do not commit a `/tmp` dependency into `package.json` or `bun.lock`.
+
+```bash
+bun install
+mv node_modules/@webviewjs/webview node_modules/@webviewjs/webview.registry
+mkdir -p node_modules/@webviewjs/webview
+tar -xzf /tmp/hawk2ui-webview-linux-x64.tgz -C node_modules/@webviewjs/webview --strip-components=1
+HAWK2UI_EDITOR_WEBVIEW_SIDECAR=1 bun run bridge
+```
+
+The bridge opens the sidecar through `POST /editor/open` with `{ root, path }`, reads the initial file through the root-confined file helpers, and saves through the same file boundary. Use `POST /editor/close` to stop the active sidecar during local verification.

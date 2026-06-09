@@ -113,9 +113,19 @@ async function saveEditorTab(id: string) {
   }
 }
 
-function requestSidecar(path: string) {
-  preview.value.output = [...preview.value.output, `sidecar requested: ${path}`];
-  workbench.value.drawer = selectDrawerTab(setDrawerMode(workbench.value.drawer, "compact"), "logs");
+async function requestSidecar(path: string) {
+  setStatusItem("sidecar", "opening", "warn");
+  try {
+    const state = await bridgeJson<{ state: string; message: string }>("/editor/open", {
+      method: "POST",
+      body: JSON.stringify({ root: workspace.value.project.root, path }),
+    });
+    setStatusItem("sidecar", state.state, state.state === "open" ? "ok" : state.state === "failed" ? "error" : "warn");
+    appendLog(state.message);
+  } catch (error) {
+    setStatusItem("sidecar", "failed", "error");
+    appendLog(error instanceof Error ? error.message : `sidecar failed: ${path}`);
+  }
 }
 
 function setDrawer(mode: DrawerMode) {
