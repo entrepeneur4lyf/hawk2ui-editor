@@ -19,6 +19,8 @@ export async function fetchDocsPage(
   path: string,
   cacheRoot = "bridge-cache/docs",
 ): Promise<DocsPage> {
+  validateDocsSource(source);
+  validateDocsPath(path);
   if (!source.paths.includes(path)) {
     throw new Error(`docs path is not configured: ${path}`);
   }
@@ -37,5 +39,24 @@ export async function fetchDocsPage(
     const cached = await readFile(cachePath, "utf8").catch(() => "");
     if (cached) return JSON.parse(cached) as DocsPage;
     throw error;
+  }
+}
+
+function validateDocsSource(source: GitHubDocsSource): void {
+  validatePathSegment(source.owner, "docs source owner");
+  validatePathSegment(source.repo, "docs source repo");
+  validatePathSegment(source.ref, "docs source ref");
+  for (const configuredPath of source.paths) validateDocsPath(configuredPath);
+}
+
+function validateDocsPath(path: string): void {
+  if (path.startsWith("/") || path.split("/").some((segment) => segment === "..")) {
+    throw new Error(`docs path must be relative and stay inside the docs cache: ${path}`);
+  }
+}
+
+function validatePathSegment(value: string, field: string): void {
+  if (!value || value.includes("/") || value === "." || value === "..") {
+    throw new Error(`${field} is invalid`);
   }
 }

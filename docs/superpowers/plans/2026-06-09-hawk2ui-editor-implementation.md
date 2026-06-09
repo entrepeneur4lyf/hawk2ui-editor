@@ -8,6 +8,8 @@
 
 **Tech Stack:** Hawk2UI Vue, Bun, Vite, TypeScript, AI SDK v6, `ai-sdk-provider-codex-cli`, `ai-sdk-provider-claude-code`, `@ai-sdk/openai-compatible`, Ark UI Vue where compatible, Hawk runtime modules, local JSON workspace files.
 
+**Implementation status:** Completed on branch `codex/hawk2ui-editor-implementation`. Verification passed with `bun run verify`, bridge `/health`, and a bounded `hawk2ui-cli dev` smoke check.
+
 ---
 
 ## Ground Rules
@@ -49,6 +51,7 @@ Create or modify these files:
 - `src/assistant/providers.ts`: provider profile types, defaults, capabilities, and redaction.
 - `src/assistant/providers.test.ts`: provider registry tests.
 - `src/assistant/client.ts`: UI-facing assistant client that can target `hawk:ai` or the local bridge.
+- `src/assistant/client.test.ts`: assistant bridge request tests.
 - `src/docs/githubDocs.ts`: docs source/cache model and bridge client request builders.
 - `src/docs/githubDocs.test.ts`: docs model tests.
 - `src/preview/previewClient.ts`: preview state machine and bridge request builders.
@@ -56,6 +59,7 @@ Create or modify these files:
 - `src/bridge/server.ts`: local Bun bridge HTTP server.
 - `src/bridge/assistant.ts`: AI SDK provider construction and streaming.
 - `src/bridge/docs.ts`: GitHub Markdown fetch/cache.
+- `src/bridge/docs.test.ts`: docs path safety tests.
 - `src/bridge/preview.ts`: `hawk2ui-cli dev` process controller.
 - `src/bridge/server.test.ts`: bridge route tests without live provider calls.
 - `src/ui/HawkFloatingPanel.vue`: Hawk-native floating panel fallback.
@@ -74,7 +78,7 @@ Create or modify these files:
 - Modify: `README.md`
 - Create: `styles/main.hawk.css`
 
-- [ ] **Step 1: Initialize a local git repository**
+- [x] **Step 1: Initialize a local git repository**
 
 Run:
 
@@ -84,7 +88,7 @@ git init
 
 Expected: `Initialized empty Git repository` or `Reinitialized existing Git repository`.
 
-- [ ] **Step 2: Add local ignore rules**
+- [x] **Step 2: Add local ignore rules**
 
 Create `.gitignore`:
 
@@ -99,7 +103,7 @@ bridge-cache/
 *.log
 ```
 
-- [ ] **Step 3: Convert `hawk.json` to a desktop editor app**
+- [x] **Step 3: Convert `hawk.json` to a desktop editor app**
 
 Replace `hawk.json` with:
 
@@ -153,7 +157,7 @@ Replace `hawk.json` with:
 }
 ```
 
-- [ ] **Step 4: Update `package.json` scripts and dependencies**
+- [x] **Step 4: Update `package.json` scripts and dependencies**
 
 Replace `package.json` with:
 
@@ -184,6 +188,7 @@ Replace `package.json` with:
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@babel/generator": "^7.29.7",
     "@types/bun": "^1.3.14",
     "@vitejs/plugin-vue": "^5.0.0",
     "typescript": "^5.0.0",
@@ -192,36 +197,32 @@ Replace `package.json` with:
 }
 ```
 
-- [ ] **Step 5: Add the style entry**
+- [x] **Step 5: Add the style entry**
 
 Create `styles/main.hawk.css`:
 
 ```css
 .editor-root {
-  background: #111318;
+  background-color: token(color.surface);
   color: #f4f7fb;
-  padding: 20;
 }
 
 .topbar {
-  background: #1b2029;
-  padding: 12;
+  background-color: token(color.surface);
 }
 
 .workspace {
-  background: #151922;
-  padding: 16;
+  background-color: token(color.surface);
 }
 
 .panel {
-  background: #202632;
+  background-color: token(color.surface);
   color: #f4f7fb;
-  padding: 12;
 }
 
 .panel-title {
   color: #ffffff;
-  font_size: 16;
+  font-size: 16px;
 }
 
 .muted {
@@ -241,7 +242,7 @@ Create `styles/main.hawk.css`:
 }
 ```
 
-- [ ] **Step 6: Update the README**
+- [x] **Step 6: Update the README**
 
 Replace `README.md` with:
 
@@ -262,7 +263,7 @@ Local dogfood app for building a Hawk2UI single-project editor with Vue.
 `workspace.hawk` is local-only and ignored by git. Store API keys in environment variables such as `OPENAI_API_KEY` or `NIM_API_KEY`, not in project files.
 ```
 
-- [ ] **Step 7: Install dependencies**
+- [x] **Step 7: Install dependencies**
 
 Run:
 
@@ -272,7 +273,7 @@ bun install
 
 Expected: dependencies install and no raw credentials are written.
 
-- [ ] **Step 8: Verify baseline**
+- [x] **Step 8: Verify baseline**
 
 Run:
 
@@ -283,7 +284,7 @@ hawk2ui-cli validate
 
 Expected: Vite build succeeds and Hawk2UI validation succeeds. If the Ark UI package causes a bundling issue before it is used, remove `@ark-ui/vue` from `dependencies` and move Ark compatibility to Task 6.
 
-- [ ] **Step 9: Local checkpoint**
+- [x] **Step 9: Local checkpoint**
 
 Run:
 
@@ -301,7 +302,7 @@ Expected: local commit succeeds. This commit is local to `hawk2ui-editor`.
 - Create: `src/core/workspace.ts`
 - Create: `src/core/workspace.test.ts`
 
-- [ ] **Step 1: Add local `workspace.hawk` defaults**
+- [x] **Step 1: Add local `workspace.hawk` defaults**
 
 Create `workspace.hawk`:
 
@@ -375,7 +376,7 @@ Create `workspace.hawk`:
 }
 ```
 
-- [ ] **Step 2: Implement workspace parsing**
+- [x] **Step 2: Implement workspace parsing**
 
 Create `src/core/workspace.ts`:
 
@@ -563,7 +564,7 @@ function validatePanel(name: string, panel: PanelState): void {
 }
 ```
 
-- [ ] **Step 3: Add workspace tests**
+- [x] **Step 3: Add workspace tests**
 
 Create `src/core/workspace.test.ts`:
 
@@ -614,7 +615,7 @@ describe("workspace.hawk", () => {
 });
 ```
 
-- [ ] **Step 4: Run workspace tests**
+- [x] **Step 4: Run workspace tests**
 
 Run:
 
@@ -624,7 +625,7 @@ bun test src/core/workspace.test.ts
 
 Expected: all tests pass.
 
-- [ ] **Step 5: Local checkpoint**
+- [x] **Step 5: Local checkpoint**
 
 Run:
 
@@ -641,7 +642,7 @@ Expected: `workspace.hawk` is ignored and not committed. If `git add workspace.h
 - Create: `src/core/project.ts`
 - Create: `src/core/project.test.ts`
 
-- [ ] **Step 1: Implement project summary parsing**
+- [x] **Step 1: Implement project summary parsing**
 
 Create `src/core/project.ts`:
 
@@ -684,7 +685,7 @@ function requireString(value: unknown, field: string): string {
 }
 ```
 
-- [ ] **Step 2: Add project summary tests**
+- [x] **Step 2: Add project summary tests**
 
 Create `src/core/project.test.ts`:
 
@@ -729,7 +730,7 @@ describe("project summary", () => {
 });
 ```
 
-- [ ] **Step 3: Run project tests**
+- [x] **Step 3: Run project tests**
 
 Run:
 
@@ -739,7 +740,7 @@ bun test src/core/project.test.ts
 
 Expected: all tests pass.
 
-- [ ] **Step 4: Local checkpoint**
+- [x] **Step 4: Local checkpoint**
 
 Run:
 
@@ -754,7 +755,7 @@ git commit -m "feat: summarize opened hawk projects"
 - Create: `src/assistant/providers.ts`
 - Create: `src/assistant/providers.test.ts`
 
-- [ ] **Step 1: Implement provider registry helpers**
+- [x] **Step 1: Implement provider registry helpers**
 
 Create `src/assistant/providers.ts`:
 
@@ -796,7 +797,7 @@ function redactEndpoint(value: string): string {
 }
 ```
 
-- [ ] **Step 2: Add registry tests**
+- [x] **Step 2: Add registry tests**
 
 Create `src/assistant/providers.test.ts`:
 
@@ -832,7 +833,7 @@ describe("assistant providers", () => {
 });
 ```
 
-- [ ] **Step 3: Run provider tests**
+- [x] **Step 3: Run provider tests**
 
 Run:
 
@@ -842,7 +843,7 @@ bun test src/assistant/providers.test.ts
 
 Expected: all tests pass.
 
-- [ ] **Step 4: Local checkpoint**
+- [x] **Step 4: Local checkpoint**
 
 Run:
 
@@ -857,10 +858,11 @@ git commit -m "feat: add assistant provider registry"
 - Create: `src/bridge/server.ts`
 - Create: `src/bridge/assistant.ts`
 - Create: `src/bridge/docs.ts`
+- Create: `src/bridge/docs.test.ts`
 - Create: `src/bridge/preview.ts`
 - Create: `src/bridge/server.test.ts`
 
-- [ ] **Step 1: Implement assistant provider construction**
+- [x] **Step 1: Implement assistant provider construction**
 
 Create `src/bridge/assistant.ts`:
 
@@ -919,13 +921,13 @@ function modelForProfile(profile: AssistantProfile) {
 }
 ```
 
-- [ ] **Step 2: Implement docs fetching**
+- [x] **Step 2: Implement docs fetching**
 
 Create `src/bridge/docs.ts`:
 
 ```ts
 import { mkdir, readFile, writeFile } from "node:fs/promises";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 
 export interface GitHubDocsSource {
   owner: string;
@@ -940,7 +942,17 @@ export interface DocsPage {
   fetchedAt: string;
 }
 
-export async function fetchDocsPage(source: GitHubDocsSource, path: string, cacheRoot = "bridge-cache/docs"): Promise<DocsPage> {
+export async function fetchDocsPage(
+  source: GitHubDocsSource,
+  path: string,
+  cacheRoot = "bridge-cache/docs",
+): Promise<DocsPage> {
+  validateDocsSource(source);
+  validateDocsPath(path);
+  if (!source.paths.includes(path)) {
+    throw new Error(`docs path is not configured: ${path}`);
+  }
+
   const cachePath = join(cacheRoot, source.owner, source.repo, source.ref, path);
   const url = `https://raw.githubusercontent.com/${source.owner}/${source.repo}/${source.ref}/${path}`;
   try {
@@ -948,7 +960,7 @@ export async function fetchDocsPage(source: GitHubDocsSource, path: string, cach
     if (!response.ok) throw new Error(`GitHub returned ${response.status}`);
     const markdown = await response.text();
     const page = { path, markdown, fetchedAt: new Date().toISOString() };
-    await mkdir(join(cacheRoot, source.owner, source.repo, source.ref, path.split("/").slice(0, -1).join("/")), { recursive: true });
+    await mkdir(dirname(cachePath), { recursive: true });
     await writeFile(cachePath, JSON.stringify(page, null, 2));
     return page;
   } catch (error) {
@@ -957,9 +969,28 @@ export async function fetchDocsPage(source: GitHubDocsSource, path: string, cach
     throw error;
   }
 }
+
+function validateDocsSource(source: GitHubDocsSource): void {
+  validatePathSegment(source.owner, "docs source owner");
+  validatePathSegment(source.repo, "docs source repo");
+  validatePathSegment(source.ref, "docs source ref");
+  for (const configuredPath of source.paths) validateDocsPath(configuredPath);
+}
+
+function validateDocsPath(path: string): void {
+  if (path.startsWith("/") || path.split("/").some((segment) => segment === "..")) {
+    throw new Error(`docs path must be relative and stay inside the docs cache: ${path}`);
+  }
+}
+
+function validatePathSegment(value: string, field: string): void {
+  if (!value || value.includes("/") || value === "." || value === "..") {
+    throw new Error(`${field} is invalid`);
+  }
+}
 ```
 
-- [ ] **Step 3: Implement preview process controller**
+- [x] **Step 3: Implement preview process controller**
 
 Create `src/bridge/preview.ts`:
 
@@ -1013,7 +1044,7 @@ function pushOutput(line: string): void {
 }
 ```
 
-- [ ] **Step 4: Implement bridge routes**
+- [x] **Step 4: Implement bridge routes**
 
 Create `src/bridge/server.ts`:
 
@@ -1088,7 +1119,7 @@ if (import.meta.main) {
 }
 ```
 
-- [ ] **Step 5: Add bridge tests**
+- [x] **Step 5: Add bridge tests**
 
 Create `src/bridge/server.test.ts`:
 
@@ -1101,20 +1132,43 @@ describe("bridge preview state", () => {
     stopPreview();
     expect(currentPreviewStatus().state).toBe("stopped");
   });
+  });
+  ```
+
+Create `src/bridge/docs.test.ts`:
+
+```ts
+import { describe, expect, test } from "bun:test";
+import { fetchDocsPage } from "./docs";
+
+describe("bridge docs fetching", () => {
+  test("rejects configured paths that escape the docs cache", async () => {
+    await expect(
+      fetchDocsPage(
+        {
+          owner: "entrepeneur4lyf",
+          repo: "hawk2ui",
+          ref: "main",
+          paths: ["../secret.md"],
+        },
+        "../secret.md",
+      ),
+    ).rejects.toThrow("docs path must be relative");
+  });
 });
 ```
 
-- [ ] **Step 6: Run bridge tests**
+- [x] **Step 6: Run bridge tests**
 
 Run:
 
 ```bash
-bun test src/bridge/server.test.ts
+bun test src/bridge/server.test.ts src/bridge/docs.test.ts
 ```
 
 Expected: all tests pass without live provider credentials.
 
-- [ ] **Step 7: Local checkpoint**
+- [x] **Step 7: Local checkpoint**
 
 Run:
 
@@ -1129,7 +1183,7 @@ git commit -m "feat: add local editor bridge"
 - Create: `src/ui/ArkFloatingPanelProbe.vue`
 - Create: `src/ui/HawkFloatingPanel.vue`
 
-- [ ] **Step 1: Add an Ark compatibility probe**
+- [x] **Step 1: Add an Ark compatibility probe**
 
 Create `src/ui/ArkFloatingPanelProbe.vue`:
 
@@ -1183,7 +1237,7 @@ import { FloatingPanel } from "@ark-ui/vue/floating-panel";
 </template>
 ```
 
-- [ ] **Step 2: Build the probe**
+- [x] **Step 2: Build the probe**
 
 Temporarily import `ArkFloatingPanelProbe` in `src/App.vue`, render it once, and run:
 
@@ -1193,7 +1247,7 @@ bun run build
 
 Expected: build succeeds. If Hawk2UI runtime rejects any Ark-generated element because it lacks a stable id, remove the temporary import and implement `HawkFloatingPanel.vue` as the active panel component for MVP.
 
-- [ ] **Step 3: Add the Hawk-native fallback panel**
+- [x] **Step 3: Add the Hawk-native fallback panel**
 
 Create `src/ui/HawkFloatingPanel.vue`:
 
@@ -1228,7 +1282,7 @@ const emit = defineEmits<{
 </template>
 ```
 
-- [ ] **Step 4: Local checkpoint**
+- [x] **Step 4: Local checkpoint**
 
 Run:
 
@@ -1241,12 +1295,13 @@ git commit -m "feat: add floating panel foundation"
 
 **Files:**
 - Create: `src/assistant/client.ts`
+- Create: `src/assistant/client.test.ts`
 - Create: `src/docs/githubDocs.ts`
 - Create: `src/docs/githubDocs.test.ts`
 - Create: `src/preview/previewClient.ts`
 - Create: `src/preview/previewClient.test.ts`
 
-- [ ] **Step 1: Add assistant client**
+- [x] **Step 1: Add assistant client**
 
 Create `src/assistant/client.ts`:
 
@@ -1280,7 +1335,7 @@ export async function sendAssistantPrompt(request: AssistantClientRequest): Prom
 }
 ```
 
-- [ ] **Step 2: Add docs client and tests**
+- [x] **Step 2: Add docs client and tests**
 
 Create `src/docs/githubDocs.ts`:
 
@@ -1339,7 +1394,7 @@ describe("GitHub docs", () => {
 });
 ```
 
-- [ ] **Step 3: Add preview client and tests**
+- [x] **Step 3: Add preview client and tests**
 
 Create `src/preview/previewClient.ts`:
 
@@ -1391,22 +1446,22 @@ describe("preview client", () => {
 });
 ```
 
-- [ ] **Step 4: Run client tests**
+- [x] **Step 4: Run client tests**
 
 Run:
 
 ```bash
-bun test src/docs/githubDocs.test.ts src/preview/previewClient.test.ts
+bun test src/assistant/client.test.ts src/docs/githubDocs.test.ts src/preview/previewClient.test.ts
 ```
 
 Expected: all tests pass.
 
-- [ ] **Step 5: Local checkpoint**
+- [x] **Step 5: Local checkpoint**
 
 Run:
 
 ```bash
-git add src/assistant/client.ts src/docs src/preview
+git add src/assistant/client.ts src/assistant/client.test.ts src/docs src/preview
 git commit -m "feat: add editor service clients"
 ```
 
@@ -1419,7 +1474,7 @@ git commit -m "feat: add editor service clients"
 - Create: `src/ui/ProjectPanel.vue`
 - Create: `src/ui/PreviewPanel.vue`
 
-- [ ] **Step 1: Add assistant panel**
+- [x] **Step 1: Add assistant panel**
 
 Create `src/ui/AssistantPanel.vue`:
 
@@ -1455,7 +1510,7 @@ const response = ref("Assistant idle.");
 </template>
 ```
 
-- [ ] **Step 2: Add docs panel**
+- [x] **Step 2: Add docs panel**
 
 Create `src/ui/DocsPanel.vue`:
 
@@ -1480,7 +1535,7 @@ defineProps<{
 </template>
 ```
 
-- [ ] **Step 3: Add project panel**
+- [x] **Step 3: Add project panel**
 
 Create `src/ui/ProjectPanel.vue`:
 
@@ -1503,7 +1558,7 @@ defineProps<{
 </template>
 ```
 
-- [ ] **Step 4: Add preview panel**
+- [x] **Step 4: Add preview panel**
 
 Create `src/ui/PreviewPanel.vue`:
 
@@ -1532,7 +1587,7 @@ const emit = defineEmits<{
 </template>
 ```
 
-- [ ] **Step 5: Replace `src/App.vue` with the editor shell**
+- [x] **Step 5: Replace `src/App.vue` with the editor shell**
 
 Replace `src/App.vue`:
 
@@ -1630,7 +1685,7 @@ function panel(name: string): PanelState {
 </template>
 ```
 
-- [ ] **Step 6: Build and validate UI**
+- [x] **Step 6: Build and validate UI**
 
 Run:
 
@@ -1642,7 +1697,7 @@ hawk2ui-cli validate
 
 Expected: all tests pass, Vite build succeeds, and Hawk2UI validation succeeds.
 
-- [ ] **Step 7: Local checkpoint**
+- [x] **Step 7: Local checkpoint**
 
 Run:
 
@@ -1656,7 +1711,7 @@ git commit -m "feat: build editor workbench shell"
 **Files:**
 - No required file changes unless verification finds a defect.
 
-- [ ] **Step 1: Run full local verification**
+- [x] **Step 1: Run full local verification**
 
 Run:
 
@@ -1666,7 +1721,7 @@ bun run verify
 
 Expected: `bun test`, `bun run build`, and `hawk2ui-cli validate` all pass.
 
-- [ ] **Step 2: Start the local bridge**
+- [x] **Step 2: Start the local bridge**
 
 Run:
 
@@ -1676,7 +1731,7 @@ bun run bridge
 
 Expected: bridge prints `Hawk2UI Editor bridge listening on http://127.0.0.1:47321`.
 
-- [ ] **Step 3: Start the editor app**
+- [x] **Step 3: Start the editor app**
 
 In a second terminal, run:
 
@@ -1686,7 +1741,7 @@ hawk2ui-cli dev
 
 Expected: Hawk2UI launches the editor app window or reports actionable runtime diagnostics.
 
-- [ ] **Step 4: Check the app window manually**
+- [x] **Step 4: Check the app window manually**
 
 Expected visible state:
 
@@ -1696,7 +1751,7 @@ Expected visible state:
 - Docs panel displays the GitHub source.
 - Preview panel has Start and Stop buttons.
 
-- [ ] **Step 5: Record any framework follow-up**
+- [x] **Step 5: Record any framework follow-up**
 
 If the app cannot call the bridge because runtime network/provider registration is missing, create `docs/superpowers/plans/2026-06-09-hawk2ui-editor-framework-followup.md` in this project with:
 
@@ -1716,7 +1771,7 @@ Required framework work:
 - Preserve deny-by-default behavior for release builds.
 ```
 
-- [ ] **Step 6: Final local checkpoint**
+- [x] **Step 6: Final local checkpoint**
 
 Run:
 
