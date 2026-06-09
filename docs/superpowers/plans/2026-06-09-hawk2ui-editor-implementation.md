@@ -4,11 +4,11 @@
 
 **Goal:** Build the first Hawk2UI Editor dogfood application inside `/home/shawn/workspace/hawk2ui-editor`.
 
-**Architecture:** The editor is a single-project Vue Hawk2UI workbench. `hawk.json` stays the portable CLI/runtime manifest, `workspace.hawk` stores local Studio/editor state, and provider execution is routed through an explicit assistant boundary instead of browser globals. Because Hawk sealed JS has no raw shell/env access, real AI SDK calls and preview process management run in a local Bun bridge process, while the Hawk UI talks to that bridge through Hawk capability APIs.
+**Architecture:** The editor is a single-project Vue Hawk2UI workbench. `hawk.json` stays the portable CLI/runtime manifest, `workspace.hawk` stores local Studio/editor state, and provider execution is routed through an explicit assistant boundary instead of browser globals. Because Hawk sealed JS has no raw shell/env access, real AI SDK calls, preview process management, and DOM-heavy code editing run through a local Bun bridge. The Hawk UI remains the native workbench shell; a WebviewJS sidecar window demonstrates a drop-in webview solution for mature code editor widgets without making webview support part of the Hawk2UI framework distribution.
 
-**Tech Stack:** Hawk2UI Vue, Bun, Vite, TypeScript, AI SDK v6, `ai-sdk-provider-codex-cli`, `ai-sdk-provider-claude-code`, `@ai-sdk/openai-compatible`, Ark UI Vue where compatible, Hawk runtime modules, local JSON workspace files.
+**Tech Stack:** Hawk2UI Vue, Bun, Vite, TypeScript, AI SDK v6, `ai-sdk-provider-codex-cli`, `ai-sdk-provider-claude-code`, `@ai-sdk/openai-compatible`, Ark UI Vue where compatible, WebviewJS sidecar where DOM widgets are needed, CodeMirror for the example editor surface, Hawk runtime modules, local JSON workspace files.
 
-**Implementation status:** Completed on branch `codex/hawk2ui-editor-implementation`. Verification passed with `bun run verify`, bridge `/health`, and a bounded `hawk2ui-cli dev` smoke check.
+**Implementation status:** Baseline workbench implementation is complete and verified. WebviewJS code editor sidecar is a pending Task 10 revision.
 
 ---
 
@@ -20,6 +20,7 @@
 - Do not store raw API keys in `hawk.json`, `workspace.hawk`, logs, fixtures, tests, or docs.
 - Treat `workspace.hawk` as local-only and ignored by git.
 - Keep provider profiles capability-based: the UI displays what a provider can do instead of assuming behavior from the provider name.
+- Treat WebviewJS as an example-sidecar dependency for this dogfood app only. Do not add WebviewJS to the Hawk2UI framework repo or present it as distributed Hawk2UI functionality.
 
 ## Current Scaffold State
 
@@ -61,7 +62,11 @@ Create or modify these files:
 - `src/bridge/docs.ts`: GitHub Markdown fetch/cache.
 - `src/bridge/docs.test.ts`: docs path safety tests.
 - `src/bridge/preview.ts`: `hawk2ui-cli dev` process controller.
+- `src/bridge/webviewEditor.ts`: WebviewJS sidecar lifecycle and file IPC.
 - `src/bridge/server.test.ts`: bridge route tests without live provider calls.
+- `src/webview-editor/index.html`: DOM editor surface loaded into WebviewJS.
+- `src/webview-editor/main.ts`: CodeMirror editor setup and IPC adapter.
+- `src/webview-editor/editor.css`: webview-only editor styling.
 - `src/ui/HawkFloatingPanel.vue`: Hawk-native floating panel fallback.
 - `src/ui/ArkFloatingPanelProbe.vue`: Ark UI compatibility probe.
 - `src/ui/AssistantPanel.vue`: assistant UI panel.
@@ -1783,6 +1788,283 @@ git commit -m "docs: record editor framework follow-up" || true
 
 Expected: if no follow-up was needed, the commit command reports nothing to commit. Do not force a commit.
 
+## Task 10: WebviewJS Code Editor Sidecar
+
+**Files:**
+- Modify: `package.json`
+- Modify: `src/bridge/server.ts`
+- Create: `src/bridge/webviewEditor.ts`
+- Create: `src/bridge/webviewEditorProcess.ts`
+- Create: `src/bridge/webviewEditor.test.ts`
+- Create: `src/webview-editor/index.html`
+- Create: `src/webview-editor/main.ts`
+- Create: `src/webview-editor/editor.css`
+- Modify: `src/ui/ProjectPanel.vue`
+- Modify: `README.md`
+
+Implementation note: the delivered sidecar keeps the same bridge/editor boundary as this task, but runs WebviewJS in a spawned process rather than inside the bridge. `Application.run()` blocks, and native webviews do not execute TypeScript files directly, so the implementation builds `src/webview-editor/main.ts` into `dist/webview-editor/main.js` and loads that browser bundle into the WebviewJS process.
+
+- [x] **Step 1: Add example-only webview/editor dependencies**
+
+Update `package.json` dependencies with:
+
+```json
+{
+  "@codemirror/commands": "^6.10.3",
+  "@codemirror/lang-javascript": "^6.2.5",
+  "@codemirror/state": "^6.6.0",
+  "@codemirror/view": "^6.43.1",
+  "@webviewjs/webview": "^0.1.4"
+}
+```
+
+Expected: these dependencies live only in `hawk2ui-editor`. Do not add them to the Hawk2UI framework repo. Start with the project-standard Bun workflow and record any WebviewJS install/runtime failure before choosing a fallback.
+
+- [x] **Step 2: Document the sidecar boundary in README**
+
+Add this section to `README.md`:
+
+```markdown
+## Code editor sidecar
+
+The code editor window is an example-only WebviewJS sidecar. Hawk2UI renders the native workbench shell; WebviewJS hosts DOM-heavy editor widgets such as CodeMirror. This app uses the sidecar to demonstrate interop for developers who need a webview, but Hawk2UI does not distribute WebviewJS as framework functionality.
+```
+
+- [x] **Step 3: Add the WebviewJS sidecar controller**
+
+Create `src/bridge/webviewEditor.ts`:
+
+```ts
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { resolve } from "node:path";
+
+export interface EditorSidecarState {
+  state: "closed" | "opening" | "open" | "failed";
+  filePath: string | null;
+  message: string;
+}
+
+let state: EditorSidecarState = {
+  state: "closed",
+  filePath: null,
+  message: "Editor sidecar is closed.",
+};
+
+export function currentEditorSidecarState(): EditorSidecarState {
+  return { ...state };
+}
+
+export async function openEditorSidecar(filePath: string): Promise<EditorSidecarState> {
+  const resolved = resolve(filePath);
+  if (!existsSync(resolved)) {
+    state = { state: "failed", filePath: resolved, message: `File does not exist: ${resolved}` };
+    return currentEditorSidecarState();
+  }
+
+  state = { state: "opening", filePath: resolved, message: "Opening WebviewJS editor sidecar." };
+  const { Application } = await import("@webviewjs/webview");
+  const html = readFileSync(resolve("src/webview-editor/index.html"), "utf8");
+  const initialText = readFileSync(resolved, "utf8");
+
+  const app = new Application();
+  const window = app.createBrowserWindow({ title: `Hawk2UI Editor - ${resolved}` });
+  const webview = window.createWebview({
+    html,
+    preload: `window.__HAWK_INITIAL_TEXT__ = ${JSON.stringify(initialText)};`,
+  });
+
+  webview.onIpcMessage((event: { body: Buffer }) => {
+    const payload = JSON.parse(event.body.toString("utf8")) as { type: string; text?: string };
+    if (payload.type === "save" && typeof payload.text === "string") {
+      writeFileSync(resolved, payload.text);
+    }
+  });
+
+  state = { state: "open", filePath: resolved, message: "Editor sidecar is open." };
+  setTimeout(() => app.run(), 0);
+  return currentEditorSidecarState();
+}
+```
+
+- [x] **Step 4: Add sidecar state tests**
+
+Create `src/bridge/webviewEditor.test.ts`:
+
+```ts
+import { describe, expect, test } from "bun:test";
+import { currentEditorSidecarState } from "./webviewEditor";
+
+describe("webview editor sidecar", () => {
+  test("starts closed", () => {
+    expect(currentEditorSidecarState()).toEqual({
+      state: "closed",
+      filePath: null,
+      message: "Editor sidecar is closed.",
+    });
+  });
+});
+```
+
+- [x] **Step 5: Add the webview HTML shell**
+
+Create `src/webview-editor/index.html`:
+
+```html
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Hawk2UI Code Editor</title>
+    <link rel="stylesheet" href="./editor.css" />
+  </head>
+  <body>
+    <main id="app">
+      <header>
+        <strong>Hawk2UI Code Editor</strong>
+        <button id="save">Save</button>
+      </header>
+      <section id="editor"></section>
+    </main>
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>
+```
+
+- [x] **Step 6: Add the CodeMirror editor entry**
+
+Create `src/webview-editor/main.ts`:
+
+```ts
+import { defaultKeymap, indentWithTab } from "@codemirror/commands";
+import { javascript } from "@codemirror/lang-javascript";
+import { EditorState } from "@codemirror/state";
+import { EditorView, keymap } from "@codemirror/view";
+import "./editor.css";
+
+declare global {
+  interface Window {
+    __HAWK_INITIAL_TEXT__?: string;
+    ipc?: { postMessage(message: string): void };
+  }
+}
+
+const editorRoot = document.getElementById("editor");
+if (!editorRoot) throw new Error("missing editor root");
+
+const view = new EditorView({
+  parent: editorRoot,
+  state: EditorState.create({
+    doc: window.__HAWK_INITIAL_TEXT__ ?? "",
+    extensions: [javascript({ typescript: true }), keymap.of([indentWithTab, ...defaultKeymap])],
+  }),
+});
+
+document.getElementById("save")?.addEventListener("click", () => {
+  window.ipc?.postMessage(JSON.stringify({ type: "save", text: view.state.doc.toString() }));
+});
+```
+
+- [x] **Step 7: Add webview-only editor styling**
+
+Create `src/webview-editor/editor.css`:
+
+```css
+html,
+body,
+#app {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  background: #111318;
+  color: #f4f7fb;
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+}
+
+header {
+  align-items: center;
+  background: #1b2029;
+  border-bottom: 1px solid #303846;
+  display: flex;
+  height: 44px;
+  justify-content: space-between;
+  padding: 0 12px;
+}
+
+button {
+  background: #2d7ff9;
+  border: 0;
+  color: white;
+  font-weight: 600;
+  padding: 6px 12px;
+}
+
+#editor {
+  height: calc(100% - 45px);
+}
+
+.cm-editor {
+  height: 100%;
+}
+```
+
+- [x] **Step 8: Add bridge routes for the sidecar**
+
+Add routes to `src/bridge/server.ts`:
+
+```ts
+if (request.method === "GET" && url.pathname === "/editor/status") {
+  return json(currentEditorSidecarState());
+}
+
+if (request.method === "POST" && url.pathname === "/editor/open") {
+  const body = await request.json();
+  return json(await openEditorSidecar(String(body.filePath)));
+}
+```
+
+Import:
+
+```ts
+import { currentEditorSidecarState, openEditorSidecar } from "./webviewEditor";
+```
+
+- [x] **Step 9: Add a workbench affordance**
+
+Add a button to `src/ui/ProjectPanel.vue`:
+
+```vue
+<hawk-button id="open-app-vue">Open src/App.vue in sidecar editor</hawk-button>
+```
+
+The first pass may display the affordance without wiring it through Hawk runtime networking. The bridge route and sidecar are the actual integration point.
+
+- [x] **Step 10: Verify the sidecar task**
+
+Run:
+
+```bash
+bun install
+bun test src/bridge/webviewEditor.test.ts
+bun run build
+hawk2ui-cli validate
+```
+
+Expected: tests, build, and validation pass. If WebviewJS native install or runtime behavior fails on the current platform, record the exact failure and keep the sidecar task behind a feature flag until the fallback is chosen.
+
+Verification note: `bun test`, the browser editor bundle, `bun run build`, and `hawk2ui-cli validate` pass. The enabled WebviewJS probe fails on this Linux x64 environment because `@webviewjs/webview@0.1.4` cannot load its native binding after npm returns 404 for `@webviewjs/webview-linux-x64-gnu`; the sidecar is gated behind `HAWK2UI_EDITOR_WEBVIEW_SIDECAR=1` and reports that failure explicitly.
+
+- [x] **Step 11: Local checkpoint**
+
+Run:
+
+```bash
+git add package.json bun.lock README.md docs/superpowers/plans/2026-06-09-hawk2ui-editor-implementation.md src/bridge src/webview-editor src/ui/ProjectPanel.vue
+git commit -m "feat: add webview code editor sidecar"
+```
+
 ## Plan Self-Review
 
 - Spec coverage: single-project workbench, `hawk.json`/`workspace.hawk` split, AI SDK provider facade, OpenAI-compatible NIM example, GitHub docs, separate preview window, and Vue dogfood app are covered.
@@ -1790,4 +2072,5 @@ Expected: if no follow-up was needed, the commit command reports nothing to comm
 - Secret handling: provider profiles store `env:` references only; tests assert raw secret redaction.
 - Runtime honesty: AI SDK and preview process execution are not placed in sealed frontend code; they run in a local Bun bridge and are called through explicit clients.
 - Ark UI risk: compatibility is tested before depending on Ark as the active floating panel implementation; the Hawk-native fallback keeps the app buildable.
+- Code editor realism: DOM-heavy code editing is handled by an example-only WebviewJS sidecar. Hawk2UI does not distribute WebviewJS or claim a Hawk-native code editor component.
 - Verification: each module has Bun tests where useful; final checks run `bun test`, `bun run build`, and `hawk2ui-cli validate`.
