@@ -1,0 +1,8 @@
+node_modules/
+dist/
+.env
+.env.*
+workspace.hawk
+.hawk2ui-cache/
+bridge-cache/
+*.log

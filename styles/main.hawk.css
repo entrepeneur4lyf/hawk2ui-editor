@@ -1,0 +1,38 @@
+.editor-root {
+  background-color: token(color.surface);
+  color: #f4f7fb;
+}
+
+.topbar {
+  background-color: token(color.surface);
+}
+
+.workspace {
+  background-color: token(color.surface);
+}
+
+.panel {
+  background-color: token(color.surface);
+  color: #f4f7fb;
+}
+
+.panel-title {
+  color: #ffffff;
+  font-size: 16px;
+}
+
+.muted {
+  color: #9aa6b2;
+}
+
+.status-ok {
+  color: #65d18f;
+}
+
+.status-warn {
+  color: #f0c66a;
+}
+
+.status-error {
+  color: #ff7b7b;
+}
