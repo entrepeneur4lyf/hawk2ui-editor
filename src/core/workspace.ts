@@ -244,9 +244,9 @@ function validateCapabilities(value: unknown, profileId: string): asserts value 
 function validatePanel(name: string, panel: unknown): asserts panel is PanelState {
   if (!isRecord(panel)) throw new Error(`workspace.panels.${name} must be an object`);
   if (typeof panel.open !== "boolean") throw new Error(`workspace.panels.${name}.open must be a boolean`);
-  if (!Number.isFinite(panel.x) || !Number.isFinite(panel.y)) throw new Error(`workspace.panels.${name}.position is invalid`);
-  if (!Number.isFinite(panel.width) || panel.width < 160) throw new Error(`workspace.panels.${name}.width is invalid`);
-  if (!Number.isFinite(panel.height) || panel.height < 120) throw new Error(`workspace.panels.${name}.height is invalid`);
+  if (!isFiniteNumber(panel.x) || !isFiniteNumber(panel.y)) throw new Error(`workspace.panels.${name}.position is invalid`);
+  if (!isFiniteNumber(panel.width) || panel.width < 160) throw new Error(`workspace.panels.${name}.width is invalid`);
+  if (!isFiniteNumber(panel.height) || panel.height < 120) throw new Error(`workspace.panels.${name}.height is invalid`);
 }
 
 function requireRecord(value: unknown, field: string): Record<string, unknown> {
@@ -261,4 +261,8 @@ function requireNonEmptyString(value: unknown, field: string): string {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function isFiniteNumber(value: unknown): value is number {
+  return typeof value === "number" && Number.isFinite(value);
 }
