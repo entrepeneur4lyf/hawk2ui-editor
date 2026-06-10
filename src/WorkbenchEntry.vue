@@ -9,6 +9,8 @@ const workspaceHeight = ref(604);
 const drawerBody = ref("Bridge idle. Use Validate, Build, Run, or Terminal.");
 const activePanel = ref("Project");
 const panelMode = ref("floating");
+const leftDockVisible = ref(false);
+const rightDockVisible = ref(false);
 const editorNotice = ref("App.vue is open. Use Open Sidecar for selectable CodeMirror editing.");
 const previewState = ref("stopped");
 
@@ -90,16 +92,19 @@ function showChatSettings() {
 
 function minimizePanel() {
   panelMode.value = "minimized";
+  leftDockVisible.value = true;
   status.value = `${activePanel.value} minimized`;
 }
 
 function dockLeft() {
   panelMode.value = "docked left";
+  leftDockVisible.value = true;
   status.value = `${activePanel.value} docked left`;
 }
 
 function dockRight() {
   panelMode.value = "docked right";
+  rightDockVisible.value = true;
   status.value = `${activePanel.value} docked right`;
 }
 
@@ -142,12 +147,14 @@ function expandDrawer() {
 function dockProjectLeft() {
   activePanel.value = "Project";
   panelMode.value = "docked left";
+  leftDockVisible.value = true;
   status.value = "Project docked left";
 }
 
 function dockChatRight() {
   activePanel.value = "Chat";
   panelMode.value = "docked right";
+  rightDockVisible.value = true;
   status.value = "Chat docked right";
 }
 
@@ -186,7 +193,13 @@ function openTerminal() {
     </hawk-view>
 
     <hawk-view id="workspace" class="workspace" width="1280" :height="workspaceHeight">
-      <hawk-view id="dock-gutter-left" class="dock-gutter dock-gutter-left" width="34" :height="workspaceHeight">
+      <hawk-view
+        v-show="leftDockVisible"
+        id="dock-gutter-left"
+        class="dock-gutter dock-gutter-left"
+        width="34"
+        :height="workspaceHeight"
+      >
         <hawk-button id="dock-left-project" class="dock-icon" width="30" height="30" @pointerdown="dockProjectLeft">
           P
         </hawk-button>
@@ -213,7 +226,13 @@ function openTerminal() {
         <hawk-button id="drawer-open-terminal" width="132" @pointerdown="openTerminal">Terminal</hawk-button>
       </hawk-view>
 
-      <hawk-view id="dock-gutter-right" class="dock-gutter dock-gutter-right" width="34" :height="workspaceHeight">
+      <hawk-view
+        v-show="rightDockVisible"
+        id="dock-gutter-right"
+        class="dock-gutter dock-gutter-right"
+        width="34"
+        :height="workspaceHeight"
+      >
         <hawk-button id="dock-right-chat" class="dock-icon" width="30" height="30" @pointerdown="dockChatRight">
           C
         </hawk-button>

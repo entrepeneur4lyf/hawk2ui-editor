@@ -112,6 +112,21 @@ describe("interactive workbench entry", () => {
     expect(handlerSetNumber(artifact, "expandDrawer", "drawerHeight")).toBe(260);
   });
 
+  test("starts dock gutters hidden and reveals them from dock and minimize actions", () => {
+    const source = readFileSync(join(import.meta.dir, "WorkbenchEntry.vue"), "utf8");
+    const output = compileHawkVue({ filename: "src/WorkbenchEntry.vue", source });
+    const artifact = output.compilerArtifact as CompiledArtifact;
+
+    expect(dynamicInitialBoolean(artifact, "leftDockVisible")).toBe(false);
+    expect(dynamicInitialBoolean(artifact, "rightDockVisible")).toBe(false);
+    expect(hasVisibilityBinding(artifact, "dock-gutter-left", "leftDockVisible")).toBe(true);
+    expect(hasVisibilityBinding(artifact, "dock-gutter-right", "rightDockVisible")).toBe(true);
+    expect(handlerSetBoolean(artifact, "minimizePanel", "leftDockVisible")).toBe(true);
+    expect(handlerSetBoolean(artifact, "dockLeft", "leftDockVisible")).toBe(true);
+    expect(handlerSetBoolean(artifact, "dockRight", "rightDockVisible")).toBe(true);
+    expect(handlerSetBoolean(artifact, "dockChatRight", "rightDockVisible")).toBe(true);
+  });
+
   test("keeps fixed desktop chrome widths within their parent regions", () => {
     const source = readFileSync(join(import.meta.dir, "WorkbenchEntry.vue"), "utf8");
     const output = compileHawkVue({ filename: "src/WorkbenchEntry.vue", source });
@@ -159,4 +174,27 @@ function handlerSetNumber(artifact: CompiledArtifact, handlerName: string, dynam
     .find((handler) => handler.name === handlerName)
     ?.actions.find((action) => action.type === "set_dynamic_value" && action.name === dynamicName)?.value;
   return value?.type === "number" && typeof value.value === "number" ? value.value : undefined;
+}
+
+function dynamicInitialBoolean(artifact: CompiledArtifact, name: string): boolean | undefined {
+  const value = artifact.initial_dynamic_values.find((entry) => entry.name === name)?.value;
+  return value?.type === "bool" && typeof value.value === "boolean" ? value.value : undefined;
+}
+
+function handlerSetBoolean(artifact: CompiledArtifact, handlerName: string, dynamicName: string): boolean | undefined {
+  const value = artifact.event_handlers
+    .find((handler) => handler.name === handlerName)
+    ?.actions.find((action) => action.type === "set_dynamic_value" && action.name === dynamicName)?.value;
+  return value?.type === "bool" && typeof value.value === "boolean" ? value.value : undefined;
+}
+
+function hasVisibilityBinding(artifact: CompiledArtifact, nodeId: string, dependency: string): boolean {
+  return artifact.dynamic_bindings.some((binding) => {
+    return (
+      binding.node_id === nodeId &&
+      binding.target.type === "prop" &&
+      binding.target.name === "visible" &&
+      binding.dependencies.includes(dependency)
+    );
+  });
 }
