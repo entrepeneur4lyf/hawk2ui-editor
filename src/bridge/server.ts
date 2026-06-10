@@ -2,7 +2,12 @@ import { fetchDocsPage } from "./docs";
 import { listProjectTree, readProjectFile, writeProjectFile } from "./files";
 import { currentPreviewStatus, startPreview, stopPreview } from "./preview";
 import { streamAssistantText } from "./assistant";
-import { closeEditorSidecar, currentEditorSidecarState, openEditorSidecar } from "./webviewEditor";
+import {
+  closeEditorSidecar,
+  currentEditorSidecarState,
+  openEditorSidecar,
+  type EditorSidecarState,
+} from "./webviewEditor";
 import { closeTerminalSidecar, currentTerminalSidecarState, openTerminalSidecar } from "./webviewTerminal";
 import { connectLspClient, currentLspStatus, disconnectLspClient, receiveLspClientMessage } from "./lsp/manager";
 import type { JsonRpcMessage } from "./lsp/protocol";
@@ -13,9 +18,10 @@ import {
   receiveTerminalClientMessage,
 } from "./terminal/manager";
 import { parseTerminalClientMessage, serializeTerminalServerMessage, type TerminalServerMessage } from "./terminal/protocol";
-import { resolveWorkbenchTheme } from "../theme/workbenchTheme";
+import { resolveWorkbenchTheme, type ResolvedWorkbenchTheme } from "../theme/workbenchTheme";
 
 const port = Number(process.env.HAWK2UI_EDITOR_BRIDGE_PORT ?? "47321");
+const defaultInitialEditorPath = "src/App.vue";
 
 type BridgeSocketData =
   | {
@@ -28,6 +34,57 @@ type BridgeSocketData =
       root: string;
       client: { send(message: TerminalServerMessage): void };
     };
+
+type EditorSidecarOpener = (
+  projectRoot: string,
+  relativePath: string,
+  theme: ResolvedWorkbenchTheme,
+) => Promise<EditorSidecarState>;
+
+export interface BridgeMainHandle {
+  server: unknown;
+  sidecar: Promise<EditorSidecarState>;
+}
+
+export interface BridgeMainOptions {
+  createServer?: () => unknown;
+  env?: Record<string, string | undefined>;
+  log?: (message: string) => void;
+  openEditor?: EditorSidecarOpener;
+  root?: string;
+}
+
+export function startBridgeMain(options: BridgeMainOptions = {}): BridgeMainHandle {
+  const server = (options.createServer ?? createBridgeServer)();
+  const log = options.log ?? console.log;
+  log(`Hawk2UI Editor bridge listening on http://127.0.0.1:${port}`);
+  const sidecar = startInitialEditorSidecar({ ...options, log });
+  sidecar.catch((error) => {
+    log(`Editor sidecar auto-start failed: ${error instanceof Error ? error.message : "unknown error"}`);
+  });
+
+  return {
+    server,
+    sidecar,
+  };
+}
+
+export async function startInitialEditorSidecar(options: Omit<BridgeMainOptions, "createServer"> = {}) {
+  const env = options.env ?? process.env;
+  const log = options.log ?? console.log;
+
+  if (env.HAWK2UI_EDITOR_WEBVIEW_SIDECAR === "0") {
+    log("Editor sidecar auto-start disabled.");
+    return currentEditorSidecarState();
+  }
+
+  env.HAWK2UI_EDITOR_WEBVIEW_SIDECAR = "1";
+  const root = options.root ?? env.HAWK2UI_EDITOR_PROJECT_ROOT ?? process.cwd();
+  const initialPath = env.HAWK2UI_EDITOR_INITIAL_FILE ?? defaultInitialEditorPath;
+  const state = await (options.openEditor ?? openEditorSidecar)(root, initialPath, resolveWorkbenchTheme(env.HAWK2UI_EDITOR_THEME));
+  log(state.message);
+  return state;
+}
 
 export function createBridgeServer() {
   return Bun.serve<BridgeSocketData>({
@@ -211,6 +268,5 @@ function requiredSearchParam(url: URL, name: string): string {
 }
 
 if (import.meta.main) {
-  createBridgeServer();
-  console.log(`Hawk2UI Editor bridge listening on http://127.0.0.1:${port}`);
+  startBridgeMain();
 }

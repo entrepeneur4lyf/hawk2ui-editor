@@ -2,11 +2,13 @@ import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { handleBridgeRequest } from "./server";
+import { handleBridgeRequest, startBridgeMain } from "./server";
 import { currentPreviewStatus, stopPreview } from "./preview";
 import { stopAllLspSessions } from "./lsp/manager";
 import { stopAllTerminalSessions } from "./terminal/manager";
+import { closeEditorSidecar } from "./webviewEditor";
 import { closeTerminalSidecar } from "./webviewTerminal";
+import type { ResolvedWorkbenchTheme } from "../theme/workbenchTheme";
 
 let root = "";
 
@@ -19,6 +21,7 @@ beforeEach(async () => {
 afterEach(async () => {
   stopAllLspSessions();
   stopAllTerminalSessions();
+  closeEditorSidecar();
   closeTerminalSidecar();
   await rm(root, { recursive: true, force: true });
 });
@@ -59,6 +62,61 @@ describe("bridge file routes", () => {
 });
 
 describe("bridge editor sidecar routes", () => {
+  test("bridge main starts the editor sidecar for the default file", async () => {
+    const env: Record<string, string | undefined> = {};
+    const messages: string[] = [];
+    const calls: { root: string; path: string; theme: ResolvedWorkbenchTheme }[] = [];
+    const server = { stop() {} };
+
+    const handle = startBridgeMain({
+      createServer: () => server,
+      env,
+      log: (message) => messages.push(message),
+      root,
+      openEditor: async (projectRoot, path, theme) => {
+        calls.push({ root: projectRoot, path, theme });
+        return {
+          state: "open",
+          filePath: join(projectRoot, path),
+          relativePath: path,
+          dirty: false,
+          line: 1,
+          column: 1,
+          lastSavedAt: null,
+          lastError: null,
+          message: "Editor sidecar is open.",
+        };
+      },
+    });
+
+    expect(handle.server).toBe(server);
+    await expect(handle.sidecar).resolves.toMatchObject({ state: "open", relativePath: "src/App.vue" });
+    expect(env.HAWK2UI_EDITOR_WEBVIEW_SIDECAR).toBe("1");
+    expect(calls).toEqual([{ root, path: "src/App.vue", theme: "black" }]);
+    expect(messages).toContain("Editor sidecar is open.");
+  });
+
+  test("bridge main honors an explicit editor sidecar disable flag", async () => {
+    const env: Record<string, string | undefined> = { HAWK2UI_EDITOR_WEBVIEW_SIDECAR: "0" };
+    const messages: string[] = [];
+    let opened = false;
+
+    const handle = startBridgeMain({
+      createServer: () => ({ stop() {} }),
+      env,
+      log: (message) => messages.push(message),
+      root,
+      openEditor: async () => {
+        opened = true;
+        throw new Error("disabled sidecar should not open");
+      },
+    });
+
+    await expect(handle.sidecar).resolves.toMatchObject({ state: "closed" });
+    expect(opened).toBe(false);
+    expect(messages).toContain("Editor sidecar auto-start disabled.");
+  });
+
   test("closes the editor sidecar", async () => {
     const response = await handleBridgeRequest(new Request("http://bridge/editor/close", { method: "POST" }));
 

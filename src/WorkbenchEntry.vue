@@ -11,13 +11,13 @@ const activePanel = ref("Project");
 const panelMode = ref("floating");
 const leftDockVisible = ref(false);
 const rightDockVisible = ref(false);
-const editorNotice = ref("App.vue is open. Use Open Sidecar for selectable CodeMirror editing.");
+const editorNotice = ref("App.vue is open. CodeMirror sidecar starts automatically from the bridge main process.");
 const editorPath = ref("src/App.vue");
 const editorLanguage = ref("Vue / TypeScript");
 const editorLine1 = ref('1  &lt;script setup lang="ts"&gt;');
 const editorLine2 = ref('2  const workbench = "interactive";');
 const editorLine3 = ref("3  &lt;/script&gt;");
-const sidecarState = ref("disabled");
+const sidecarState = ref("auto-starting");
 const previewState = ref("stopped");
 
 function openProject() {
@@ -135,7 +135,7 @@ function selectAppTab() {
   editorLine1.value = '1  &lt;script setup lang="ts"&gt;';
   editorLine2.value = '2  const workbench = "interactive";';
   editorLine3.value = "3  &lt;/script&gt;";
-  editorNotice.value = "App.vue is open. Use Open Sidecar for selectable CodeMirror editing.";
+  editorNotice.value = "App.vue is open. CodeMirror sidecar starts automatically from the bridge main process.";
   status.value = "App.vue selected";
 }
 
@@ -163,7 +163,7 @@ function openEditorSidecar() {
   sidecarState.value = "requested";
   drawerTab.value = "Logs";
   drawerBody.value = "Editor sidecar request queued for the active file.";
-  editorNotice.value = "Sidecar request queued. CodeMirror provides selectable editing.";
+  editorNotice.value = "Sidecar focus/retry request queued. CodeMirror provides selectable editing.";
   status.value = "Editor sidecar requested";
 }
 

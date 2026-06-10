@@ -100,6 +100,7 @@ describe("interactive workbench entry", () => {
     }
 
     expect(dynamicInitialString(artifact, "editorPath")).toBe("src/App.vue");
+    expect(dynamicInitialString(artifact, "sidecarState")).toBe("auto-starting");
     expect(handlerSetString(artifact, "selectReadmeTab", "editorPath")).toBe("README.md");
     expect(handlerSetString(artifact, "selectManifestTab", "editorPath")).toBe("hawk.json");
     expect(handlerSetString(artifact, "openEditorSidecar", "sidecarState")).toBe("requested");
