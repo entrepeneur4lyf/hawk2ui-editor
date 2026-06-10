@@ -126,10 +126,22 @@ describe("interactive workbench entry", () => {
     }
 
     expect(dynamicInitialString(artifact, "editorPath")).toBe("src/App.vue");
-    expect(dynamicInitialString(artifact, "sidecarState")).toBe("auto-starting");
+    expect(dynamicInitialString(artifact, "sidecarState")).toBe("separate window");
     expect(handlerSetString(artifact, "selectReadmeTab", "editorPath")).toBe("README.md");
     expect(handlerSetString(artifact, "selectManifestTab", "editorPath")).toBe("hawk.json");
     expect(handlerSetString(artifact, "openEditorSidecar", "sidecarState")).toBe("requested");
+  });
+
+  test("renders readable native preview text instead of escaped html entities", () => {
+    const source = readFileSync(join(import.meta.dir, "WorkbenchEntry.vue"), "utf8");
+    const output = compileHawkVue({ filename: "src/WorkbenchEntry.vue", source });
+    const artifact = output.compilerArtifact as CompiledArtifact;
+
+    expect(dynamicInitialString(artifact, "editorLine1")).toBe('1  <script setup lang="ts">');
+    expect(dynamicInitialString(artifact, "editorLine3")).toBe("3  </script>");
+    expect(handlerSetString(artifact, "selectAppTab", "editorLine1")).toBe('1  <script setup lang="ts">');
+    expect(handlerSetString(artifact, "selectAppTab", "editorLine3")).toBe("3  </script>");
+    expect(dynamicInitialString(artifact, "sidecarState")).toBe("separate window");
   });
 
   test("exposes bottom drawer tabs as stateful controls", () => {

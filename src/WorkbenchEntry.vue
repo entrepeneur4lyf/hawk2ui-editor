@@ -13,13 +13,13 @@ const panelBodyPrimary = ref("Project files: App.vue, WorkbenchEntry.vue, README
 const panelBodySecondary = ref("Open files into editor tabs; CodeMirror sidecar follows the active file.");
 const leftDockVisible = ref(false);
 const rightDockVisible = ref(false);
-const editorNotice = ref("App.vue is open. CodeMirror sidecar starts automatically from the bridge main process.");
+const editorNotice = ref("App.vue is open. CodeMirror runs in a separate sidecar window.");
 const editorPath = ref("src/App.vue");
 const editorLanguage = ref("Vue / TypeScript");
-const editorLine1 = ref('1  &lt;script setup lang="ts"&gt;');
+const editorLine1 = ref('1  \u003cscript setup lang="ts"\u003e');
 const editorLine2 = ref('2  const workbench = "interactive";');
-const editorLine3 = ref("3  &lt;/script&gt;");
-const sidecarState = ref("auto-starting");
+const editorLine3 = ref("3  \u003c/script\u003e");
+const sidecarState = ref("separate window");
 const previewState = ref("stopped");
 
 function openProject() {
@@ -146,10 +146,10 @@ function restorePanel() {
 function selectAppTab() {
   editorPath.value = "src/App.vue";
   editorLanguage.value = "Vue / TypeScript";
-  editorLine1.value = '1  &lt;script setup lang="ts"&gt;';
+  editorLine1.value = '1  \u003cscript setup lang="ts"\u003e';
   editorLine2.value = '2  const workbench = "interactive";';
-  editorLine3.value = "3  &lt;/script&gt;";
-  editorNotice.value = "App.vue is open. CodeMirror sidecar starts automatically from the bridge main process.";
+  editorLine3.value = "3  \u003c/script\u003e";
+  editorNotice.value = "App.vue is open. CodeMirror runs in a separate sidecar window.";
   status.value = "App.vue selected";
 }
 
