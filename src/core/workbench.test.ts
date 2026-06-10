@@ -215,7 +215,7 @@ describe("workbench shell", () => {
   test("defines deterministic command bar groups within chrome budgets", () => {
     const groups = workbenchCommandGroups();
 
-    expect(groups.map((group) => group.id)).toEqual(["project", "run", "panels"]);
+    expect(groups.map((group) => group.id)).toEqual(["project", "run", "panels", "overflow"]);
     expect(groups.flatMap((group) => group.commands.map((command) => command.id))).toEqual([
       "open-project",
       "new-file",
@@ -224,12 +224,15 @@ describe("workbench shell", () => {
       "build",
       "run-preview",
       "stop-preview",
-      "command-palette",
       "toggle-project",
       "toggle-chat",
       "toggle-docs",
       "toggle-editor-settings",
       "toggle-chat-settings",
+      "command-palette",
+    ]);
+    expect(groups.find((group) => group.id === "overflow")?.commands.map((command) => command.id)).toEqual([
+      "command-palette",
     ]);
 
     const chrome = workbenchChromeMetrics(960);

@@ -159,7 +159,7 @@ const dockGutter = computed(() => workbenchDockGutterMetrics(layout.value));
 const resolvedTheme = computed(() => resolveWorkbenchTheme(workspace.value.editor.theme));
 const rootClass = computed(() => `editor-root ${themeClassName(workspace.value.editor.theme)}`);
 const commandGroups = workbenchCommandGroups();
-const actionCommands = commandGroups.filter((group) => group.id !== "panels").flatMap((group) => group.commands);
+const actionCommandGroups = commandGroups.filter((group) => group.id !== "panels");
 const panelCommands = commandGroups.find((group) => group.id === "panels")?.commands ?? [];
 const leftDockItems = computed(() => dockItems("left"));
 const rightDockItems = computed(() => dockItems("right"));
@@ -634,17 +634,26 @@ function severityLabel(severity: number | undefined): string {
         class="command-group"
         :width="chrome.commandWidth"
         :height="layout.topBarHeight"
-      >
-        <hawk-button
-          v-for="command in actionCommands"
-          :id="`command-${command.id}`"
-          :key="command.id"
-          :width="command.width"
-          @pointerdown="runWorkbenchCommand(command)"
         >
-          {{ command.label }}
-        </hawk-button>
-      </hawk-view>
+          <hawk-view
+            v-for="group in actionCommandGroups"
+            :id="`command-${group.id}-group`"
+            :key="group.id"
+            class="command-group"
+            :width="group.width"
+            :height="layout.topBarHeight"
+          >
+            <hawk-button
+              v-for="command in group.commands"
+              :id="`command-${command.id}`"
+              :key="command.id"
+              :width="command.width"
+              @pointerdown="runWorkbenchCommand(command)"
+            >
+              {{ command.label }}
+            </hawk-button>
+          </hawk-view>
+        </hawk-view>
 
       <hawk-view
         v-if="chrome.panelLauncherWidth > 0"

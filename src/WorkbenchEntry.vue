@@ -154,19 +154,27 @@ function openTerminal() {
   <hawk-view id="editor-root" class="theme-black" width="1280" height="820">
     <hawk-view id="topbar" class="topbar" width="1280" height="42">
       <hawk-text id="app-title" width="180">Hawk2UI Editor</hawk-text>
-      <hawk-button id="command-open-project" width="56" @pointerdown="openProject">Open</hawk-button>
-      <hawk-button id="command-new-file" width="50" @pointerdown="newFile">New</hawk-button>
-      <hawk-button id="command-save" width="56" @pointerdown="saveFile">Save</hawk-button>
-      <hawk-button id="command-validate" width="78" @pointerdown="validateProject">Validate</hawk-button>
-      <hawk-button id="command-build" width="58" @pointerdown="buildProject">Build</hawk-button>
-      <hawk-button id="command-run" width="48" @pointerdown="runPreview">Run</hawk-button>
-      <hawk-button id="command-stop" width="50" @pointerdown="stopPreview">Stop</hawk-button>
-      <hawk-button id="command-palette" width="72" @pointerdown="openPalette">Palette</hawk-button>
-      <hawk-button id="toggle-project" width="60" @pointerdown="showProject">Project</hawk-button>
-      <hawk-button id="toggle-chat" width="44" @pointerdown="showChat">Chat</hawk-button>
-      <hawk-button id="toggle-docs" width="44" @pointerdown="showDocs">Docs</hawk-button>
-      <hawk-button id="toggle-editor-settings" width="54" @pointerdown="showEditorSettings">Editor</hawk-button>
-      <hawk-button id="toggle-chat-settings" width="88" @pointerdown="showChatSettings">Chat Cfg</hawk-button>
+      <hawk-view id="command-project-group" class="command-group" width="162" height="42">
+        <hawk-button id="command-open-project" width="56" @pointerdown="openProject">Open</hawk-button>
+        <hawk-button id="command-new-file" width="50" @pointerdown="newFile">New</hawk-button>
+        <hawk-button id="command-save" width="56" @pointerdown="saveFile">Save</hawk-button>
+      </hawk-view>
+      <hawk-view id="command-run-group" class="command-group" width="234" height="42">
+        <hawk-button id="command-validate" width="78" @pointerdown="validateProject">Validate</hawk-button>
+        <hawk-button id="command-build" width="58" @pointerdown="buildProject">Build</hawk-button>
+        <hawk-button id="command-run" width="48" @pointerdown="runPreview">Run</hawk-button>
+        <hawk-button id="command-stop" width="50" @pointerdown="stopPreview">Stop</hawk-button>
+      </hawk-view>
+      <hawk-view id="panel-launchers" class="command-group" width="290" height="42">
+        <hawk-button id="toggle-project" width="60" @pointerdown="showProject">Project</hawk-button>
+        <hawk-button id="toggle-chat" width="44" @pointerdown="showChat">Chat</hawk-button>
+        <hawk-button id="toggle-docs" width="44" @pointerdown="showDocs">Docs</hawk-button>
+        <hawk-button id="toggle-editor-settings" width="54" @pointerdown="showEditorSettings">Editor</hawk-button>
+        <hawk-button id="toggle-chat-settings" width="88" @pointerdown="showChatSettings">Chat Cfg</hawk-button>
+      </hawk-view>
+      <hawk-view id="command-overflow-group" class="command-group" width="72" height="42">
+        <hawk-button id="command-palette" width="72" @pointerdown="openPalette">Palette</hawk-button>
+      </hawk-view>
     </hawk-view>
 
     <hawk-view id="workspace" class="workspace" width="1280" height="574">

@@ -8,7 +8,7 @@ export type DrawerTab = "terminal" | "logs" | "debug" | "problems";
 export type DrawerMode = "collapsed" | "compact" | "expanded";
 export type StatusTone = "ok" | "warn" | "error" | "muted";
 export type PreviewStateName = "stopped" | "starting" | "running" | "failed";
-export type WorkbenchCommandGroupId = "project" | "run" | "panels";
+export type WorkbenchCommandGroupId = "project" | "run" | "panels" | "overflow";
 export type WorkbenchCommandId =
   | "open-project"
   | "new-file"
@@ -48,6 +48,7 @@ export interface WorkbenchCommand {
 
 export interface WorkbenchCommandGroup {
   id: WorkbenchCommandGroupId;
+  width: number;
   commands: WorkbenchCommand[];
 }
 
@@ -388,6 +389,7 @@ export function workbenchCommandGroups(): WorkbenchCommandGroup[] {
   return [
     {
       id: "project",
+      width: 162,
       commands: [
         { id: "open-project", label: "Open", width: 56, group: "project" },
         { id: "new-file", label: "New", width: 50, group: "project" },
@@ -396,16 +398,17 @@ export function workbenchCommandGroups(): WorkbenchCommandGroup[] {
     },
     {
       id: "run",
+      width: 234,
       commands: [
         { id: "validate", label: "Validate", width: 78, group: "run" },
         { id: "build", label: "Build", width: 58, group: "run" },
         { id: "run-preview", label: "Run", width: 48, group: "run" },
         { id: "stop-preview", label: "Stop", width: 50, group: "run" },
-        { id: "command-palette", label: "Palette", width: 72, group: "run" },
       ],
     },
     {
       id: "panels",
+      width: 290,
       commands: [
         { id: "toggle-project", label: "Project", width: 60, group: "panels", panel: "project" },
         { id: "toggle-chat", label: "Chat", width: 44, group: "panels", panel: "assistant" },
@@ -413,6 +416,11 @@ export function workbenchCommandGroups(): WorkbenchCommandGroup[] {
         { id: "toggle-editor-settings", label: "Editor", width: 54, group: "panels", panel: "editorSettings" },
         { id: "toggle-chat-settings", label: "Chat Cfg", width: 88, group: "panels", panel: "chatSettings" },
       ],
+    },
+    {
+      id: "overflow",
+      width: 72,
+      commands: [{ id: "command-palette", label: "Palette", width: 72, group: "overflow" }],
     },
   ];
 }

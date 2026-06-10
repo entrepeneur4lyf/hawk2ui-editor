@@ -62,6 +62,22 @@ describe("interactive workbench entry", () => {
     }
   });
 
+  test("groups topbar commands into project, run, panel, and overflow clusters", () => {
+    const source = readFileSync(join(import.meta.dir, "WorkbenchEntry.vue"), "utf8");
+    const output = compileHawkVue({ filename: "src/WorkbenchEntry.vue", source });
+    const nodes = flattenNodes(output.compilerArtifact.root as CompiledNode);
+    const groupIds = ["command-project-group", "command-run-group", "panel-launchers", "command-overflow-group"];
+
+    for (const id of groupIds) {
+      const node = nodes.find((candidate) => candidate.id === id);
+      expect(node?.kind).toBe("view");
+      expect(sumChildWidths(node)).toBeLessThanOrEqual(numberProp(node, "width"));
+    }
+
+    const topbar = nodes.find((candidate) => candidate.id === "topbar");
+    expect(sumChildWidths(topbar)).toBeLessThanOrEqual(numberProp(topbar, "width"));
+  });
+
   test("keeps fixed desktop chrome widths within their parent regions", () => {
     const source = readFileSync(join(import.meta.dir, "WorkbenchEntry.vue"), "utf8");
     const output = compileHawkVue({ filename: "src/WorkbenchEntry.vue", source });
