@@ -3,6 +3,7 @@ import { ref } from "vue";
 
 const status = ref("Ready");
 const drawerTab = ref("Logs");
+const drawerMode = ref("compact");
 const drawerBody = ref("Bridge idle. Use Validate, Build, Run, or Terminal.");
 const activePanel = ref("Project");
 const panelMode = ref("floating");
@@ -105,6 +106,43 @@ function pinPanel() {
   status.value = `${activePanel.value} pinned`;
 }
 
+function unpinPanel() {
+  panelMode.value = "docked";
+  status.value = `${activePanel.value} unpinned`;
+}
+
+function restorePanel() {
+  panelMode.value = "floating";
+  status.value = `${activePanel.value} restored`;
+}
+
+function collapseDrawer() {
+  drawerMode.value = "collapsed";
+  status.value = "Drawer collapsed";
+}
+
+function compactDrawer() {
+  drawerMode.value = "compact";
+  status.value = "Drawer compact";
+}
+
+function expandDrawer() {
+  drawerMode.value = "expanded";
+  status.value = "Drawer expanded";
+}
+
+function dockProjectLeft() {
+  activePanel.value = "Project";
+  panelMode.value = "docked left";
+  status.value = "Project docked left";
+}
+
+function dockChatRight() {
+  activePanel.value = "Chat";
+  panelMode.value = "docked right";
+  status.value = "Chat docked right";
+}
+
 function openTerminal() {
   drawerTab.value = "Terminal";
   drawerBody.value = "Terminal bridge ready. Webview terminal opens through the bridge sidecar.";
@@ -132,13 +170,19 @@ function openTerminal() {
     </hawk-view>
 
     <hawk-view id="workspace" class="workspace" width="1280" height="574">
-      <hawk-view id="editor-workspace" class="editor-workspace" width="860" height="574">
-        <hawk-text id="editor-tabs" class="mono" width="860" height="34">App.vue    README.md    hawk.json</hawk-text>
-        <hawk-text id="editor-path" class="muted" width="860" height="28">src/App.vue / interactive Hawk entry</hawk-text>
-        <hawk-text id="editor-line-1" class="code-line" width="860" height="28">1  &lt;script setup lang="ts"&gt;</hawk-text>
-        <hawk-text id="editor-line-2" class="code-line" width="860" height="28">2  const workbench = "interactive";</hawk-text>
-        <hawk-text id="editor-line-3" class="code-line" width="860" height="28">3  &lt;/script&gt;</hawk-text>
-        <hawk-text id="editor-notice" class="muted" width="860" height="32">{{ editorNotice }}</hawk-text>
+      <hawk-view id="dock-gutter-left" class="dock-gutter dock-gutter-left" width="34" height="574">
+        <hawk-button id="dock-left-project" class="dock-icon" width="30" height="30" @pointerdown="dockProjectLeft">
+          P
+        </hawk-button>
+      </hawk-view>
+
+      <hawk-view id="editor-workspace" class="editor-workspace" width="852" height="574">
+        <hawk-text id="editor-tabs" class="mono" width="852" height="34">App.vue    README.md    hawk.json</hawk-text>
+        <hawk-text id="editor-path" class="muted" width="852" height="28">src/App.vue / interactive Hawk entry</hawk-text>
+        <hawk-text id="editor-line-1" class="code-line" width="852" height="28">1  &lt;script setup lang="ts"&gt;</hawk-text>
+        <hawk-text id="editor-line-2" class="code-line" width="852" height="28">2  const workbench = "interactive";</hawk-text>
+        <hawk-text id="editor-line-3" class="code-line" width="852" height="28">3  &lt;/script&gt;</hawk-text>
+        <hawk-text id="editor-notice" class="muted" width="852" height="32">{{ editorNotice }}</hawk-text>
       </hawk-view>
 
       <hawk-view id="active-panel" class="panel" width="360" height="360">
@@ -148,22 +192,39 @@ function openTerminal() {
         <hawk-button id="panel-dock-left" width="72" @pointerdown="dockLeft">Dock L</hawk-button>
         <hawk-button id="panel-dock-right" width="72" @pointerdown="dockRight">Dock R</hawk-button>
         <hawk-button id="panel-pin" width="72" @pointerdown="pinPanel">Pin</hawk-button>
+        <hawk-button id="panel-unpin" width="72" @pointerdown="unpinPanel">Unpin</hawk-button>
+        <hawk-button id="panel-restore" width="72" @pointerdown="restorePanel">Float</hawk-button>
         <hawk-button id="drawer-open-terminal" width="132" @pointerdown="openTerminal">Terminal</hawk-button>
+      </hawk-view>
+
+      <hawk-view id="dock-gutter-right" class="dock-gutter dock-gutter-right" width="34" height="574">
+        <hawk-button id="dock-right-chat" class="dock-icon" width="30" height="30" @pointerdown="dockChatRight">
+          C
+        </hawk-button>
       </hawk-view>
     </hawk-view>
 
     <hawk-view id="bottom-drawer" class="bottom-drawer" width="1280" height="150">
-      <hawk-text id="drawer-tabs" width="1280" height="28">Terminal | Logs | Debug | Problems</hawk-text>
+      <hawk-view id="drawer-toolbar" class="drawer-toolbar" width="1280" height="34">
+        <hawk-text id="drawer-tabs" width="392" height="28">Terminal | Logs | Debug | Problems</hawk-text>
+        <hawk-button id="drawer-collapse" width="86" @pointerdown="collapseDrawer">Collapse</hawk-button>
+        <hawk-button id="drawer-compact" width="78" @pointerdown="compactDrawer">Compact</hawk-button>
+        <hawk-button id="drawer-expand" width="72" @pointerdown="expandDrawer">Expand</hawk-button>
+      </hawk-view>
       <hawk-text id="drawer-active" class="mono" width="1280" height="28">Active: {{ drawerTab }}</hawk-text>
+      <hawk-text id="drawer-mode" class="mono" width="1280" height="28">Mode: {{ drawerMode }}</hawk-text>
       <hawk-text id="drawer-body" class="mono" width="1280" height="44">{{ drawerBody }}</hawk-text>
     </hawk-view>
 
     <hawk-view id="status-bar" class="status-bar" width="1280" height="24">
-      <hawk-text id="status-project" width="210">Project: hawk2ui-editor</hawk-text>
-      <hawk-text id="status-manifest" width="150">Manifest: valid</hawk-text>
-      <hawk-text id="status-lsp" width="170">LSP: bridge ready</hawk-text>
-      <hawk-text id="status-terminal" width="190">Terminal: bridge ready</hawk-text>
-      <hawk-text id="status-preview" width="160">Preview: {{ previewState }}</hawk-text>
+      <hawk-text id="status-project" width="170">Project: hawk2ui-editor</hawk-text>
+      <hawk-text id="status-manifest" width="120">Manifest: valid</hawk-text>
+      <hawk-text id="status-lsp" width="130">LSP: ready</hawk-text>
+      <hawk-text id="status-terminal" width="150">Terminal: ready</hawk-text>
+      <hawk-text id="status-preview" width="140">Preview: {{ previewState }}</hawk-text>
+      <hawk-text id="status-cpu" class="mono" width="70">CPU: --</hawk-text>
+      <hawk-text id="status-mem" class="mono" width="70">MEM: --</hawk-text>
+      <hawk-text id="status-gpu" class="mono" width="90">GPU: pending</hawk-text>
       <hawk-text id="status-current" width="300">Status: {{ status }}</hawk-text>
     </hawk-view>
   </hawk-view>

@@ -6,6 +6,7 @@ import { join } from "node:path";
 interface CompiledNode {
   id: string;
   kind: string;
+  props?: { name: string; value: { type: string; value: unknown } }[];
   events?: { kind: string; handler: string }[];
   children?: { node: CompiledNode }[];
 }
@@ -36,6 +37,42 @@ describe("interactive workbench entry", () => {
     }
   });
 
+  test("exposes planned drawer, dock, panel, and status affordances in the compiled entry", () => {
+    const source = readFileSync(join(import.meta.dir, "WorkbenchEntry.vue"), "utf8");
+    const output = compileHawkVue({ filename: "src/WorkbenchEntry.vue", source });
+    const nodes = flattenNodes(output.compilerArtifact.root as CompiledNode);
+    const interactiveIds = [
+      "drawer-collapse",
+      "drawer-compact",
+      "drawer-expand",
+      "dock-left-project",
+      "dock-right-chat",
+      "panel-restore",
+      "panel-unpin",
+    ];
+
+    for (const id of interactiveIds) {
+      const node = nodes.find((candidate) => candidate.id === id);
+      expect(node?.kind).toBe("button");
+      expect(node?.events?.some((event) => event.kind === "pointer.press")).toBe(true);
+    }
+
+    for (const id of ["status-cpu", "status-mem", "status-gpu"]) {
+      expect(nodes.find((candidate) => candidate.id === id)?.kind).toBe("text");
+    }
+  });
+
+  test("keeps fixed desktop chrome widths within their parent regions", () => {
+    const source = readFileSync(join(import.meta.dir, "WorkbenchEntry.vue"), "utf8");
+    const output = compileHawkVue({ filename: "src/WorkbenchEntry.vue", source });
+    const nodes = flattenNodes(output.compilerArtifact.root as CompiledNode);
+
+    for (const id of ["workspace", "status-bar"]) {
+      const node = nodes.find((candidate) => candidate.id === id);
+      expect(sumChildWidths(node)).toBeLessThanOrEqual(numberProp(node, "width"));
+    }
+  });
+
   test("hawk manifest points at the interactive framework entry", () => {
     const manifest = JSON.parse(readFileSync(join(import.meta.dir, "..", "hawk.json"), "utf8")) as {
       app: { entry: string; framework: string };
@@ -50,4 +87,14 @@ describe("interactive workbench entry", () => {
 
 function flattenNodes(node: CompiledNode): CompiledNode[] {
   return [node, ...(node.children ?? []).flatMap((child) => flattenNodes(child.node))];
+}
+
+function numberProp(node: CompiledNode | undefined, name: string): number {
+  const value = node?.props?.find((prop) => prop.name === name)?.value;
+  if (value?.type !== "number" || typeof value.value !== "number") return 0;
+  return value.value;
+}
+
+function sumChildWidths(node: CompiledNode | undefined): number {
+  return (node?.children ?? []).reduce((total, child) => total + numberProp(child.node, "width"), 0);
 }
