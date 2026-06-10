@@ -42,13 +42,14 @@ describe("webview editor sidecar", () => {
     });
   });
 
-  test("requires an explicit feature flag", async () => {
+  test("honors an explicit disable flag", async () => {
     const filePath = join(directory, "sample.ts");
     writeFileSync(filePath, "export const value = 1;\n");
+    const messages: string[] = [];
 
-    delete process.env.HAWK2UI_EDITOR_WEBVIEW_SIDECAR;
+    process.env.HAWK2UI_EDITOR_WEBVIEW_SIDECAR = "0";
 
-    expect(await openEditorSidecar(directory, "sample.ts")).toEqual({
+    expect(await openEditorSidecar(directory, "sample.ts", "black", (message) => messages.push(message))).toEqual({
       state: "failed",
       filePath,
       relativePath: "sample.ts",
@@ -56,9 +57,13 @@ describe("webview editor sidecar", () => {
       line: 1,
       column: 1,
       lastSavedAt: null,
-      lastError: "Editor sidecar is disabled. Set HAWK2UI_EDITOR_WEBVIEW_SIDECAR=1 to enable the WebviewJS example.",
-      message: "Editor sidecar is disabled. Set HAWK2UI_EDITOR_WEBVIEW_SIDECAR=1 to enable the WebviewJS example.",
+      lastError: "Editor sidecar is disabled by HAWK2UI_EDITOR_WEBVIEW_SIDECAR=0.",
+      message: "Editor sidecar is disabled by HAWK2UI_EDITOR_WEBVIEW_SIDECAR=0.",
     });
+    expect(messages).toEqual([
+      `[editor] launch requested: sample.ts (${filePath}) theme=black`,
+      "[editor] launch blocked: HAWK2UI_EDITOR_WEBVIEW_SIDECAR=0",
+    ]);
   });
 
   test("rejects paths that escape the project root", async () => {

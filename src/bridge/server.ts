@@ -6,6 +6,7 @@ import {
   closeEditorSidecar,
   currentEditorSidecarState,
   openEditorSidecar,
+  type EditorSidecarLogger,
   type EditorSidecarState,
 } from "./webviewEditor";
 import { closeTerminalSidecar, currentTerminalSidecarState, openTerminalSidecar } from "./webviewTerminal";
@@ -39,6 +40,7 @@ type EditorSidecarOpener = (
   projectRoot: string,
   relativePath: string,
   theme: ResolvedWorkbenchTheme,
+  log?: EditorSidecarLogger,
 ) => Promise<EditorSidecarState>;
 
 export interface BridgeMainHandle {
@@ -81,7 +83,8 @@ export async function startInitialEditorSidecar(options: Omit<BridgeMainOptions,
   env.HAWK2UI_EDITOR_WEBVIEW_SIDECAR = "1";
   const root = options.root ?? env.HAWK2UI_EDITOR_PROJECT_ROOT ?? process.cwd();
   const initialPath = env.HAWK2UI_EDITOR_INITIAL_FILE ?? defaultInitialEditorPath;
-  const state = await (options.openEditor ?? openEditorSidecar)(root, initialPath, resolveWorkbenchTheme(env.HAWK2UI_EDITOR_THEME));
+  log(`[bridge] editor sidecar auto-start: ${initialPath}`);
+  const state = await (options.openEditor ?? openEditorSidecar)(root, initialPath, resolveWorkbenchTheme(env.HAWK2UI_EDITOR_THEME), log);
   log(state.message);
   return state;
 }

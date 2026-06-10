@@ -36,6 +36,8 @@ export type EditorSidecarPayloadInput = Omit<EditorSidecarPayload, "theme"> & {
   theme?: ResolvedWorkbenchTheme;
 };
 
+export type EditorSidecarLogger = (message: string) => void;
+
 const editorEventPrefix = "HAWK_EDITOR_EVENT ";
 
 let state: EditorSidecarState = closedEditorSidecarState();
@@ -123,28 +125,34 @@ export async function openEditorSidecar(
   projectRoot: string,
   relativePath: string,
   theme: ResolvedWorkbenchTheme = "black",
+  log: EditorSidecarLogger = () => {},
 ): Promise<EditorSidecarState> {
   let resolved: string;
   try {
     resolved = resolveProjectPath(projectRoot, relativePath);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Invalid editor sidecar path.";
+    log(`[editor] launch rejected: ${message}`);
     state = failedEditorSidecarState(null, null, message);
     return currentEditorSidecarState();
   }
 
-  if (process.env.HAWK2UI_EDITOR_WEBVIEW_SIDECAR !== "1") {
-    const message = "Editor sidecar is disabled. Set HAWK2UI_EDITOR_WEBVIEW_SIDECAR=1 to enable the WebviewJS example.";
+  log(`[editor] launch requested: ${relativePath} (${resolved}) theme=${theme}`);
+  if (process.env.HAWK2UI_EDITOR_WEBVIEW_SIDECAR === "0") {
+    const message = "Editor sidecar is disabled by HAWK2UI_EDITOR_WEBVIEW_SIDECAR=0.";
+    log("[editor] launch blocked: HAWK2UI_EDITOR_WEBVIEW_SIDECAR=0");
     state = failedEditorSidecarState(resolved, relativePath, message);
     return currentEditorSidecarState();
   }
 
   if (!existsSync(resolved)) {
+    log(`[editor] launch failed: file does not exist: ${resolved}`);
     state = failedEditorSidecarState(resolved, relativePath, `File does not exist: ${resolved}`);
     return currentEditorSidecarState();
   }
 
   if (!statSync(resolved).isFile()) {
+    log(`[editor] launch failed: path is not a file: ${resolved}`);
     state = failedEditorSidecarState(resolved, relativePath, `Path is not a file: ${resolved}`);
     return currentEditorSidecarState();
   }
@@ -158,8 +166,11 @@ export async function openEditorSidecar(
   };
 
   try {
+    log(`[editor] verifying native webview binding: ${webviewPackageName}`);
     await verifyWebviewBinding();
+    log("[editor] native webview binding loaded");
     const scriptPath = await buildWebviewEditorBundle();
+    log(`[editor] webview bundle built: ${scriptPath}`);
     const file = await readProjectFile(projectRoot, relativePath);
     const payloadPath = writeEditorPayload(createEditorSidecarPayload({
       projectRoot,
@@ -169,18 +180,24 @@ export async function openEditorSidecar(
       scriptPath,
       theme,
     }));
+    log(`[editor] launch payload written: ${payloadPath}`);
 
-    activeProcess?.kill();
+    if (activeProcess) {
+      log("[editor] stopping previous editor sidecar process");
+      activeProcess.kill();
+    }
     activeProcess = Bun.spawn({
       cmd: [process.execPath, resolve("src/bridge/webviewEditorProcess.ts"), payloadPath],
       stdout: "pipe",
       stderr: "pipe",
       env: process.env,
     });
-    consumeEditorProcessOutput(activeProcess.stdout);
-    drainEditorProcessOutput(activeProcess.stderr);
+    log(`[editor] spawned sidecar process pid=${activeProcess.pid}`);
+    consumeEditorProcessOutput(activeProcess.stdout, log);
+    consumeEditorErrorOutput(activeProcess.stderr, log);
 
     activeProcess.exited.then((code) => {
+      log(`[editor] sidecar process exited code=${code}`);
       if (state.filePath === resolved && code !== 0) {
         state = {
           ...state,
@@ -203,6 +220,7 @@ export async function openEditorSidecar(
       message: "Editor sidecar is open.",
     };
   } catch (error) {
+    log(`[editor] launch failed: ${error instanceof Error ? error.message : "unknown error"}`);
     state = failedEditorSidecarState(
       resolved,
       relativePath,
@@ -286,7 +304,7 @@ function failedEditorSidecarState(filePath: string | null, relativePath: string 
   };
 }
 
-function consumeEditorProcessOutput(stream: ReadableStream<Uint8Array> | null | undefined): void {
+function consumeEditorProcessOutput(stream: ReadableStream<Uint8Array> | null | undefined, log: EditorSidecarLogger): void {
   if (!stream) return;
 
   void (async () => {
@@ -301,36 +319,64 @@ function consumeEditorProcessOutput(stream: ReadableStream<Uint8Array> | null | 
       const lines = buffer.split(/\r?\n/);
       buffer = lines.pop() ?? "";
       for (const line of lines) {
-        handleEditorProcessLine(line);
+        handleEditorProcessLine(line, log);
       }
     }
 
     buffer += decoder.decode();
-    if (buffer) handleEditorProcessLine(buffer);
+    if (buffer) handleEditorProcessLine(buffer, log);
   })().catch((error) => {
-    handleEditorSidecarMessage({
+    const next = handleEditorSidecarMessage({
       type: "editorError",
       message: error instanceof Error ? error.message : "Failed to read editor sidecar output.",
     });
+    log(`[editor] sidecar output read failed: ${next.message}`);
   });
 }
 
-function drainEditorProcessOutput(stream: ReadableStream<Uint8Array> | null | undefined): void {
+function consumeEditorErrorOutput(stream: ReadableStream<Uint8Array> | null | undefined, log: EditorSidecarLogger): void {
   if (!stream) return;
-  void stream.pipeTo(new WritableStream({ write() {} })).catch(() => {});
+  void (async () => {
+    const reader = stream.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+
+    while (true) {
+      const chunk = await reader.read();
+      if (chunk.done) break;
+      buffer += decoder.decode(chunk.value, { stream: true });
+      const lines = buffer.split(/\r?\n/);
+      buffer = lines.pop() ?? "";
+      for (const line of lines) {
+        if (line.trim()) log(`[editor:stderr] ${line}`);
+      }
+    }
+
+    buffer += decoder.decode();
+    if (buffer.trim()) log(`[editor:stderr] ${buffer}`);
+  })().catch((error) => {
+    log(`[editor] sidecar stderr read failed: ${error instanceof Error ? error.message : "unknown error"}`);
+  });
 }
 
-function handleEditorProcessLine(line: string): void {
-  if (!line.startsWith(editorEventPrefix)) return;
+function handleEditorProcessLine(line: string, log: EditorSidecarLogger): void {
+  if (!line.startsWith(editorEventPrefix)) {
+    if (line.trim()) log(`[editor:stdout] ${line}`);
+    return;
+  }
 
   try {
     const message = parseEditorSidecarMessage(JSON.parse(line.slice(editorEventPrefix.length)));
-    if (message) handleEditorSidecarMessage(message);
+    if (message) {
+      const next = handleEditorSidecarMessage(message);
+      log(`[editor] sidecar event ${message.type}: ${next.message}`);
+    }
   } catch (error) {
-    handleEditorSidecarMessage({
+    const next = handleEditorSidecarMessage({
       type: "editorError",
       message: error instanceof Error ? error.message : "Invalid editor sidecar event.",
     });
+    log(`[editor] invalid sidecar event: ${next.message}`);
   }
 }
 
