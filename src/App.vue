@@ -37,6 +37,7 @@ import {
   unpinPanel,
   workbenchCommandGroups,
   workbenchChromeMetrics,
+  workbenchDockGutterMetrics,
   workbenchLayoutMetrics,
   type DockEdge,
   type DrawerMode,
@@ -154,6 +155,7 @@ const problems = computed(() => lspProblems(lsp.value, workspace.value.project.r
 const terminalLabel = computed(() => terminal.value?.message ?? "Terminal bridge is idle.");
 const layout = computed(() => workbenchLayoutMetrics(surfaceSize.value, workbench.value.drawer.mode));
 const chrome = computed(() => workbenchChromeMetrics(layout.value.width));
+const dockGutter = computed(() => workbenchDockGutterMetrics(layout.value));
 const resolvedTheme = computed(() => resolveWorkbenchTheme(workspace.value.editor.theme));
 const rootClass = computed(() => `editor-root ${themeClassName(workspace.value.editor.theme)}`);
 const commandGroups = workbenchCommandGroups();
@@ -669,7 +671,8 @@ function severityLabel(severity: number | undefined): string {
       :panels="leftDockItems"
       :active-panel-id="activeDockPanelId"
       :peeked-panel-id="peekedPanelId"
-      :height="layout.workspaceHeight"
+      :width="dockGutter.width"
+      :height="dockGutter.height"
       @open-panel="openDockedPanel"
       @peek-panel="schedulePeekPanel"
       @close-peek="closePeek"
@@ -684,7 +687,8 @@ function severityLabel(severity: number | undefined): string {
       :panels="rightDockItems"
       :active-panel-id="activeDockPanelId"
       :peeked-panel-id="peekedPanelId"
-      :height="layout.workspaceHeight"
+      :width="dockGutter.width"
+      :height="dockGutter.height"
       @open-panel="openDockedPanel"
       @peek-panel="schedulePeekPanel"
       @close-peek="closePeek"

@@ -83,6 +83,14 @@ export interface WorkbenchChromeMetrics {
   panelLauncherWidth: number;
 }
 
+export interface WorkbenchDockGutterMetrics {
+  width: number;
+  height: number;
+  topOffset: number;
+  leftX: number;
+  rightX: number;
+}
+
 export interface StatusBarVisibility {
   items: StatusItem[];
   showActivePath: boolean;
@@ -352,6 +360,17 @@ export function workbenchLayoutMetrics(
   const workspaceHeight = Math.max(180, height - topBarHeight - drawerHeight - statusBarHeight);
 
   return { width, height, topBarHeight, drawerHeight, statusBarHeight, gutterWidth, workspaceHeight };
+}
+
+export function workbenchDockGutterMetrics(layout: WorkbenchLayoutMetrics): WorkbenchDockGutterMetrics {
+  const width = clamp(layout.gutterWidth, 28, 36);
+  return {
+    width,
+    height: layout.workspaceHeight,
+    topOffset: layout.topBarHeight,
+    leftX: 0,
+    rightX: Math.max(0, layout.width - width),
+  };
 }
 
 export function workbenchChromeMetrics(width: number): WorkbenchChromeMetrics {

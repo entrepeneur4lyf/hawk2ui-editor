@@ -14,6 +14,7 @@ defineProps<{
   panels: DockPanelItem[];
   activePanelId: WorkbenchPanelName | null;
   peekedPanelId: WorkbenchPanelName | null;
+  width: number;
   height: number;
 }>();
 
@@ -45,7 +46,7 @@ function iconClass(item: DockPanelItem, activePanelId: WorkbenchPanelName | null
 </script>
 
 <template>
-  <hawk-view :id="`dock-gutter-${edge}`" :class="`dock-gutter dock-gutter-${edge}`" :width="34" :height="height">
+  <hawk-view :id="`dock-gutter-${edge}`" :class="`dock-gutter dock-gutter-${edge}`" :width="width" :height="height">
     <hawk-button
       v-for="item in panels"
       :id="`dock-${edge}-${item.id}`"

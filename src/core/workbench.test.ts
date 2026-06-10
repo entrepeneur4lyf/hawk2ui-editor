@@ -17,6 +17,7 @@ import {
   togglePanel,
   undockPanel,
   unpinPanel,
+  workbenchDockGutterMetrics,
   workbenchCommandGroups,
   workbenchChromeMetrics,
   workbenchLayoutMetrics,
@@ -180,6 +181,18 @@ describe("workbench shell", () => {
       gutterWidth: 34,
       workspaceHeight: 180,
     });
+  });
+
+  test("derives dock gutter metrics without shrinking the editor workspace", () => {
+    const layout = workbenchLayoutMetrics({ width: 1280, height: 820 }, "compact");
+    const gutter = workbenchDockGutterMetrics(layout);
+
+    expect(gutter.width).toBeGreaterThanOrEqual(28);
+    expect(gutter.width).toBeLessThanOrEqual(36);
+    expect(gutter.height).toBe(layout.workspaceHeight);
+    expect(gutter.topOffset).toBe(layout.topBarHeight);
+    expect(gutter.leftX).toBe(0);
+    expect(gutter.rightX).toBe(layout.width - gutter.width);
   });
 
   test("keeps command chrome inside the minimum desktop width", () => {
