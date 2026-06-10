@@ -12,10 +12,12 @@ import {
   recoverPanelsForViewport,
   selectDrawerTab,
   setDrawerMode,
+  statusBarVisibility,
   statusItemsWithPreview,
   togglePanel,
   undockPanel,
   unpinPanel,
+  workbenchChromeMetrics,
   workbenchLayoutMetrics,
   type WorkbenchPanelName,
 } from "./workbench";
@@ -177,6 +179,46 @@ describe("workbench shell", () => {
       gutterWidth: 34,
       workspaceHeight: 180,
     });
+  });
+
+  test("keeps command chrome inside the minimum desktop width", () => {
+    expect(workbenchChromeMetrics(1280)).toEqual({
+      brandWidth: 180,
+      commandWidth: 560,
+      panelLauncherWidth: 360,
+    });
+
+    expect(workbenchChromeMetrics(960)).toEqual({
+      brandWidth: 160,
+      commandWidth: 468,
+      panelLauncherWidth: 300,
+    });
+
+    const compact = workbenchChromeMetrics(960);
+    expect(compact.brandWidth + compact.commandWidth + compact.panelLauncherWidth).toBeLessThanOrEqual(960);
+  });
+
+  test("collapses low-priority status signals at narrow widths", () => {
+    const state = createWorkbenchState("/tmp/project");
+
+    expect(statusBarVisibility(state.statusItems, 1280)).toMatchObject({
+      items: state.statusItems,
+      showActivePath: true,
+      showProviderLabel: true,
+    });
+
+    const compact = statusBarVisibility(state.statusItems, 960);
+    expect(compact.items.map((item) => item.id)).toEqual([
+      "project",
+      "manifest",
+      "bridge",
+      "sidecar",
+      "lsp",
+      "terminal",
+      "preview",
+    ]);
+    expect(compact.showActivePath).toBe(false);
+    expect(compact.showProviderLabel).toBe(false);
   });
 
   test("reflects preview state in status items", () => {

@@ -49,6 +49,18 @@ export interface WorkbenchLayoutMetrics {
   workspaceHeight: number;
 }
 
+export interface WorkbenchChromeMetrics {
+  brandWidth: number;
+  commandWidth: number;
+  panelLauncherWidth: number;
+}
+
+export interface StatusBarVisibility {
+  items: StatusItem[];
+  showActivePath: boolean;
+  showProviderLabel: boolean;
+}
+
 export function defaultWorkbenchPanels(): Record<WorkbenchPanelName, PanelState> {
   return {
     project: normalizePanelState({ open: true, x: 20, y: 56, width: 360, height: 560 }),
@@ -314,6 +326,17 @@ export function workbenchLayoutMetrics(
   return { width, height, topBarHeight, drawerHeight, statusBarHeight, gutterWidth, workspaceHeight };
 }
 
+export function workbenchChromeMetrics(width: number): WorkbenchChromeMetrics {
+  const viewportWidth = Math.max(0, finiteNumber(width, 1280));
+  if (viewportWidth >= 1120) {
+    return { brandWidth: 180, commandWidth: 560, panelLauncherWidth: 360 };
+  }
+  if (viewportWidth >= 960) {
+    return { brandWidth: 160, commandWidth: 468, panelLauncherWidth: 300 };
+  }
+  return { brandWidth: Math.max(120, Math.min(160, viewportWidth)), commandWidth: 0, panelLauncherWidth: 0 };
+}
+
 export function setDrawerMode(drawer: DrawerState, mode: DrawerMode): DrawerState {
   return { ...drawer, mode };
 }
@@ -327,6 +350,20 @@ export function statusItemsWithPreview(items: StatusItem[], previewState: Previe
     if (item.id !== "preview") return item;
     return { ...item, value: previewState, tone: previewStatusTone(previewState) };
   });
+}
+
+export function statusBarVisibility(items: StatusItem[], width: number): StatusBarVisibility {
+  const viewportWidth = Math.max(0, finiteNumber(width, 1280));
+  if (viewportWidth >= 1120) {
+    return { items, showActivePath: true, showProviderLabel: true };
+  }
+
+  const hiddenIds = viewportWidth >= 960 ? new Set(["cpu", "mem", "gpu"]) : new Set(["sidecar", "cpu", "mem", "gpu"]);
+  return {
+    items: items.filter((item) => !hiddenIds.has(item.id)),
+    showActivePath: false,
+    showProviderLabel: false,
+  };
 }
 
 export function activeEditorTab(state: WorkbenchState): EditorTab {

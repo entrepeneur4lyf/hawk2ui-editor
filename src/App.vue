@@ -35,6 +35,7 @@ import {
   togglePanel,
   undockPanel,
   unpinPanel,
+  workbenchChromeMetrics,
   workbenchLayoutMetrics,
   type DockEdge,
   type DrawerMode,
@@ -150,6 +151,7 @@ const sidecarAvailable = computed(() => sidecar.value?.state === "open");
 const problems = computed(() => lspProblems(lsp.value, workspace.value.project.root));
 const terminalLabel = computed(() => terminal.value?.message ?? "Terminal bridge is idle.");
 const layout = computed(() => workbenchLayoutMetrics(surfaceSize.value, workbench.value.drawer.mode));
+const chrome = computed(() => workbenchChromeMetrics(layout.value.width));
 const resolvedTheme = computed(() => resolveWorkbenchTheme(workspace.value.editor.theme));
 const rootClass = computed(() => `editor-root ${themeClassName(workspace.value.editor.theme)}`);
 const leftDockItems = computed(() => dockItems("left"));
@@ -563,12 +565,18 @@ function severityLabel(severity: number | undefined): string {
     @resize="handleRootResize"
   >
     <hawk-view id="topbar" class="topbar" :width="layout.width" :height="layout.topBarHeight">
-      <hawk-view id="app-brand" class="command-group" :width="180" :height="layout.topBarHeight">
+      <hawk-view id="app-brand" class="command-group" :width="chrome.brandWidth" :height="layout.topBarHeight">
         <hawk-text id="app-title">Hawk2UI Editor</hawk-text>
         <hawk-text id="app-subtitle" class="muted">Workbench</hawk-text>
       </hawk-view>
 
-      <hawk-view id="command-actions" class="command-group" :width="560" :height="layout.topBarHeight">
+      <hawk-view
+        v-if="chrome.commandWidth > 0"
+        id="command-actions"
+        class="command-group"
+        :width="chrome.commandWidth"
+        :height="layout.topBarHeight"
+      >
         <hawk-button id="command-open" :width="56">Open</hawk-button>
         <hawk-button id="command-new-file" :width="50">New</hawk-button>
         <hawk-button id="command-save" :width="56" @pointer-press="saveEditorTab(activeTab.id)">Save</hawk-button>
@@ -579,15 +587,21 @@ function severityLabel(severity: number | undefined): string {
         <hawk-button id="command-palette" :width="72" @pointer-press="selectDrawer('logs')">Palette</hawk-button>
       </hawk-view>
 
-      <hawk-view id="panel-launchers" class="command-group" :width="360" :height="layout.topBarHeight">
-        <hawk-button id="toggle-project" :width="68" @pointer-press="toggleWorkbenchPanel('project')">Project</hawk-button>
-        <hawk-button id="toggle-chat" :width="54" @pointer-press="toggleWorkbenchPanel('assistant')">Chat</hawk-button>
-        <hawk-button id="toggle-docs" :width="54" @pointer-press="toggleWorkbenchPanel('docs')">Docs</hawk-button>
-        <hawk-button id="toggle-editor-settings" :width="60" @pointer-press="toggleWorkbenchPanel('editorSettings')">
+      <hawk-view
+        v-if="chrome.panelLauncherWidth > 0"
+        id="panel-launchers"
+        class="command-group"
+        :width="chrome.panelLauncherWidth"
+        :height="layout.topBarHeight"
+      >
+        <hawk-button id="toggle-project" :width="60" @pointer-press="toggleWorkbenchPanel('project')">Project</hawk-button>
+        <hawk-button id="toggle-chat" :width="44" @pointer-press="toggleWorkbenchPanel('assistant')">Chat</hawk-button>
+        <hawk-button id="toggle-docs" :width="44" @pointer-press="toggleWorkbenchPanel('docs')">Docs</hawk-button>
+        <hawk-button id="toggle-editor-settings" :width="54" @pointer-press="toggleWorkbenchPanel('editorSettings')">
           Editor
         </hawk-button>
-        <hawk-button id="toggle-chat-settings" :width="112" @pointer-press="toggleWorkbenchPanel('chatSettings')">
-          Chat Settings
+        <hawk-button id="toggle-chat-settings" :width="88" @pointer-press="toggleWorkbenchPanel('chatSettings')">
+          Chat Cfg
         </hawk-button>
       </hawk-view>
     </hawk-view>
