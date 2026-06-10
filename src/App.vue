@@ -130,7 +130,7 @@ const project = summarizeHawkManifest(
   workspace.value.project.root,
   JSON.stringify({
     package: { id: "com.hawk2ui.editor", name: "Hawk2UI Editor", version: "0.1.0" },
-    app: { entry: "src/main.ts", framework: "vue" },
+    app: { entry: "src/main.ts", framework: "native" },
     targets: { desktop: [{ name: "main" }] },
   }),
 );
