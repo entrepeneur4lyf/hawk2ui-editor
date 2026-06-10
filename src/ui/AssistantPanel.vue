@@ -23,7 +23,7 @@ const response = ref("Assistant idle.");
       {{ badge.label }}: {{ badge.value }}
     </hawk-text>
     <hawk-input id="assistant-prompt" v-model="prompt" />
-    <hawk-button id="assistant-send" @pointer-press="response = 'Bridge request queued.'">Send</hawk-button>
+    <hawk-button id="assistant-send" @pointerdown="response = 'Bridge request queued.'">Send</hawk-button>
     <hawk-text id="assistant-response">{{ response }}</hawk-text>
   </hawk-view>
 </template>

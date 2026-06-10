@@ -16,7 +16,7 @@
 
 - [ ] Create `src/ui/DockGutter.vue` with props for `edge`, `panels`, `activePanelId`, and `peekedPanelId`.
 - [ ] Emit semantic events such as `open-panel`, `peek-panel`, `pin-panel`, `unpin-panel`, `undock-panel`, and `close-peek`.
-- [ ] Use Hawk host elements and current event patterns first, especially `@pointer-press`.
+- [ ] Use Hawk host elements and current event patterns first, especially `@pointerdown`.
 - [ ] Verify the Vue adapter event name for pointer enter/leave before adding hover peek. If unsupported, ship click/focus peek first.
 
 ## Task 2: Gutter Rendering

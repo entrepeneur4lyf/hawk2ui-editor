@@ -49,12 +49,12 @@ function openEntry(entry: VisibleTreeEntry) {
         v-for="entry in visibleEntries"
         :id="entryId(entry.path)"
         :key="entry.path"
-        @pointer-press="openEntry(entry)"
+        @pointerdown="openEntry(entry)"
       >
         {{ entry.label }}
       </hawk-button>
     </hawk-view>
-    <hawk-button id="open-app-vue-sidecar" @pointer-press="emit('openSidecar', 'src/App.vue')">
+    <hawk-button id="open-app-vue-sidecar" @pointerdown="emit('openSidecar', 'src/App.vue')">
       Open src/App.vue in sidecar editor
     </hawk-button>
   </hawk-view>

@@ -30,37 +30,37 @@ function panelClass(panel: PanelState): string {
   <hawk-view :id="`${idPrefix}-panel`" :class="panelClass(panel)" :width="panel.width" :height="panel.height">
     <hawk-view :id="`${idPrefix}-header`" class="panel-header">
       <hawk-text :id="`${idPrefix}-title`" class="panel-title">{{ title }}</hawk-text>
-      <hawk-button v-if="panel.mode === 'floating'" :id="`${idPrefix}-left`" @pointer-press="emit('nudge', -24, 0)">
+      <hawk-button v-if="panel.mode === 'floating'" :id="`${idPrefix}-left`" @pointerdown="emit('nudge', -24, 0)">
         Left
       </hawk-button>
-      <hawk-button v-if="panel.mode === 'floating'" :id="`${idPrefix}-right`" @pointer-press="emit('nudge', 24, 0)">
+      <hawk-button v-if="panel.mode === 'floating'" :id="`${idPrefix}-right`" @pointerdown="emit('nudge', 24, 0)">
         Right
       </hawk-button>
-      <hawk-button v-if="panel.mode === 'floating'" :id="`${idPrefix}-up`" @pointer-press="emit('nudge', 0, -24)">
+      <hawk-button v-if="panel.mode === 'floating'" :id="`${idPrefix}-up`" @pointerdown="emit('nudge', 0, -24)">
         Up
       </hawk-button>
-      <hawk-button v-if="panel.mode === 'floating'" :id="`${idPrefix}-down`" @pointer-press="emit('nudge', 0, 24)">
+      <hawk-button v-if="panel.mode === 'floating'" :id="`${idPrefix}-down`" @pointerdown="emit('nudge', 0, 24)">
         Down
       </hawk-button>
-      <hawk-button v-if="panel.mode === 'floating'" :id="`${idPrefix}-dock-left`" @pointer-press="emit('dockLeft')">
+      <hawk-button v-if="panel.mode === 'floating'" :id="`${idPrefix}-dock-left`" @pointerdown="emit('dockLeft')">
         Dock L
       </hawk-button>
-      <hawk-button v-if="panel.mode === 'floating'" :id="`${idPrefix}-dock-right`" @pointer-press="emit('dockRight')">
+      <hawk-button v-if="panel.mode === 'floating'" :id="`${idPrefix}-dock-right`" @pointerdown="emit('dockRight')">
         Dock R
       </hawk-button>
-      <hawk-button v-if="panel.mode === 'floating'" :id="`${idPrefix}-minimize`" @pointer-press="emit('minimize')">
+      <hawk-button v-if="panel.mode === 'floating'" :id="`${idPrefix}-minimize`" @pointerdown="emit('minimize')">
         Min
       </hawk-button>
-      <hawk-button v-if="panel.mode !== 'floating'" :id="`${idPrefix}-restore`" @pointer-press="emit('restore')">
+      <hawk-button v-if="panel.mode !== 'floating'" :id="`${idPrefix}-restore`" @pointerdown="emit('restore')">
         Float
       </hawk-button>
-      <hawk-button v-if="panel.mode !== 'floating' && !panel.pinned" :id="`${idPrefix}-pin`" @pointer-press="emit('pin')">
+      <hawk-button v-if="panel.mode !== 'floating' && !panel.pinned" :id="`${idPrefix}-pin`" @pointerdown="emit('pin')">
         Pin
       </hawk-button>
-      <hawk-button v-if="panel.mode !== 'floating' && panel.pinned" :id="`${idPrefix}-unpin`" @pointer-press="emit('unpin')">
+      <hawk-button v-if="panel.mode !== 'floating' && panel.pinned" :id="`${idPrefix}-unpin`" @pointerdown="emit('unpin')">
         Unpin
       </hawk-button>
-      <hawk-button :id="`${idPrefix}-close`" @pointer-press="emit('close')">Close</hawk-button>
+      <hawk-button :id="`${idPrefix}-close`" @pointerdown="emit('close')">Close</hawk-button>
     </hawk-view>
     <slot />
   </hawk-view>

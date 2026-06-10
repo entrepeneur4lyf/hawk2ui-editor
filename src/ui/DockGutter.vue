@@ -54,7 +54,7 @@ function iconClass(item: DockPanelItem, activePanelId: WorkbenchPanelName | null
       :tooltip="item.label"
       :width="30"
       :height="30"
-      @pointer-press="emit('openPanel', item.id)"
+      @pointerdown="emit('openPanel', item.id)"
       @pointerenter="emit('peekPanel', item.id)"
       @pointerleave="emit('closePeek', item.id)"
     >
@@ -72,7 +72,7 @@ function iconClass(item: DockPanelItem, activePanelId: WorkbenchPanelName | null
         :id="`dock-${edge}-${item.id}-unpin`"
         :width="30"
         :height="24"
-        @pointer-press="emit('unpinPanel', item.id)"
+        @pointerdown="emit('unpinPanel', item.id)"
       >
         U
       </hawk-button>
@@ -81,7 +81,7 @@ function iconClass(item: DockPanelItem, activePanelId: WorkbenchPanelName | null
         :id="`dock-${edge}-${item.id}-pin`"
         :width="30"
         :height="24"
-        @pointer-press="emit('pinPanel', item.id)"
+        @pointerdown="emit('pinPanel', item.id)"
       >
         P
       </hawk-button>
@@ -90,7 +90,7 @@ function iconClass(item: DockPanelItem, activePanelId: WorkbenchPanelName | null
         :id="`dock-${edge}-${item.id}-restore`"
         :width="30"
         :height="24"
-        @pointer-press="emit('undockPanel', item.id)"
+        @pointerdown="emit('undockPanel', item.id)"
       >
         F
       </hawk-button>

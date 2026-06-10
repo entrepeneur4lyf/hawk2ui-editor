@@ -579,12 +579,12 @@ function severityLabel(severity: number | undefined): string {
       >
         <hawk-button id="command-open" :width="56">Open</hawk-button>
         <hawk-button id="command-new-file" :width="50">New</hawk-button>
-        <hawk-button id="command-save" :width="56" @pointer-press="saveEditorTab(activeTab.id)">Save</hawk-button>
-        <hawk-button id="command-validate" :width="78" @pointer-press="selectDrawer('problems')">Validate</hawk-button>
-        <hawk-button id="command-build" :width="58" @pointer-press="selectDrawer('logs')">Build</hawk-button>
-        <hawk-button id="command-run" :width="48" @pointer-press="preview.state = 'starting'">Run</hawk-button>
-        <hawk-button id="command-stop" :width="50" @pointer-press="preview.state = 'stopped'">Stop</hawk-button>
-        <hawk-button id="command-palette" :width="72" @pointer-press="selectDrawer('logs')">Palette</hawk-button>
+        <hawk-button id="command-save" :width="56" @pointerdown="saveEditorTab(activeTab.id)">Save</hawk-button>
+        <hawk-button id="command-validate" :width="78" @pointerdown="selectDrawer('problems')">Validate</hawk-button>
+        <hawk-button id="command-build" :width="58" @pointerdown="selectDrawer('logs')">Build</hawk-button>
+        <hawk-button id="command-run" :width="48" @pointerdown="preview.state = 'starting'">Run</hawk-button>
+        <hawk-button id="command-stop" :width="50" @pointerdown="preview.state = 'stopped'">Stop</hawk-button>
+        <hawk-button id="command-palette" :width="72" @pointerdown="selectDrawer('logs')">Palette</hawk-button>
       </hawk-view>
 
       <hawk-view
@@ -594,13 +594,13 @@ function severityLabel(severity: number | undefined): string {
         :width="chrome.panelLauncherWidth"
         :height="layout.topBarHeight"
       >
-        <hawk-button id="toggle-project" :width="60" @pointer-press="toggleWorkbenchPanel('project')">Project</hawk-button>
-        <hawk-button id="toggle-chat" :width="44" @pointer-press="toggleWorkbenchPanel('assistant')">Chat</hawk-button>
-        <hawk-button id="toggle-docs" :width="44" @pointer-press="toggleWorkbenchPanel('docs')">Docs</hawk-button>
-        <hawk-button id="toggle-editor-settings" :width="54" @pointer-press="toggleWorkbenchPanel('editorSettings')">
+        <hawk-button id="toggle-project" :width="60" @pointerdown="toggleWorkbenchPanel('project')">Project</hawk-button>
+        <hawk-button id="toggle-chat" :width="44" @pointerdown="toggleWorkbenchPanel('assistant')">Chat</hawk-button>
+        <hawk-button id="toggle-docs" :width="44" @pointerdown="toggleWorkbenchPanel('docs')">Docs</hawk-button>
+        <hawk-button id="toggle-editor-settings" :width="54" @pointerdown="toggleWorkbenchPanel('editorSettings')">
           Editor
         </hawk-button>
-        <hawk-button id="toggle-chat-settings" :width="88" @pointer-press="toggleWorkbenchPanel('chatSettings')">
+        <hawk-button id="toggle-chat-settings" :width="88" @pointerdown="toggleWorkbenchPanel('chatSettings')">
           Chat Cfg
         </hawk-button>
       </hawk-view>
@@ -641,7 +641,7 @@ function severityLabel(severity: number | undefined): string {
       class="workspace"
       :width="layout.width"
       :height="layout.workspaceHeight"
-      @pointer-press="closeActivePeek"
+      @pointerdown="closeActivePeek"
     >
       <EditorWorkspace
         :tabs="documents.documents"

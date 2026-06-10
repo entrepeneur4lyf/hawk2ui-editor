@@ -34,7 +34,7 @@ function activeThemeLabel(): string {
         :id="`editor-theme-${choice.value}`"
         :key="choice.value"
         class="settings-choice"
-        @pointer-press="emit('updateTheme', choice.value)"
+        @pointerdown="emit('updateTheme', choice.value)"
       >
         {{ choice.label }}
       </hawk-button>

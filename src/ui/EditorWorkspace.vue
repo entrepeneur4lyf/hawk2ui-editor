@@ -50,7 +50,7 @@ function tabDomId(tab: EditorDocument): string {
         :id="tabDomId(tab)"
         :key="tab.id"
         class="editor-tab"
-        @pointer-press="emit('select', tab.id)"
+        @pointerdown="emit('select', tab.id)"
       >
         {{ tab.dirty ? "* " : "" }}{{ tab.title }}
       </hawk-button>
@@ -74,8 +74,8 @@ function tabDomId(tab: EditorDocument): string {
       </hawk-view>
 
       <hawk-view id="editor-actions" class="editor-actions" :width="width" :height="actionBarHeight">
-        <hawk-button id="editor-save-active" @pointer-press="emit('save', activeTab.id)">Save</hawk-button>
-        <hawk-button id="editor-open-sidecar" @pointer-press="emit('openSidecar', activeTab.path)">
+        <hawk-button id="editor-save-active" @pointerdown="emit('save', activeTab.id)">Save</hawk-button>
+        <hawk-button id="editor-open-sidecar" @pointerdown="emit('openSidecar', activeTab.path)">
           Open Sidecar
         </hawk-button>
         <hawk-text id="editor-sidecar-state" class="muted">

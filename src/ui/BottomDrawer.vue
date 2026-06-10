@@ -54,13 +54,13 @@ function tabClass(tab: DrawerTab, activeTab: DrawerTab): string {
         :key="tab"
         :class="tabClass(tab, activeTab)"
         :width="92"
-        @pointer-press="emit('selectTab', tab)"
+        @pointerdown="emit('selectTab', tab)"
       >
         {{ tab }}
       </hawk-button>
-      <hawk-button id="drawer-collapse" :width="86" @pointer-press="emit('setMode', 'collapsed')">Collapse</hawk-button>
-      <hawk-button id="drawer-compact" :width="78" @pointer-press="emit('setMode', 'compact')">Compact</hawk-button>
-      <hawk-button id="drawer-expand" :width="72" @pointer-press="emit('setMode', 'expanded')">Expand</hawk-button>
+      <hawk-button id="drawer-collapse" :width="86" @pointerdown="emit('setMode', 'collapsed')">Collapse</hawk-button>
+      <hawk-button id="drawer-compact" :width="78" @pointerdown="emit('setMode', 'compact')">Compact</hawk-button>
+      <hawk-button id="drawer-expand" :width="72" @pointerdown="emit('setMode', 'expanded')">Expand</hawk-button>
     </hawk-view>
 
     <hawk-view
@@ -72,8 +72,8 @@ function tabClass(tab: DrawerTab, activeTab: DrawerTab): string {
     >
       <hawk-view v-if="activeTab === 'terminal'" id="drawer-terminal">
         <hawk-text id="drawer-terminal-status" class="mono">{{ terminalLabel }}</hawk-text>
-        <hawk-button id="drawer-open-terminal" :width="112" @pointer-press="emit('openTerminal')">Open Terminal</hawk-button>
-        <hawk-button id="drawer-close-terminal" :width="116" @pointer-press="emit('closeTerminal')">Close Terminal</hawk-button>
+        <hawk-button id="drawer-open-terminal" :width="112" @pointerdown="emit('openTerminal')">Open Terminal</hawk-button>
+        <hawk-button id="drawer-close-terminal" :width="116" @pointerdown="emit('closeTerminal')">Close Terminal</hawk-button>
       </hawk-view>
       <hawk-view v-if="activeTab === 'logs'" id="drawer-log-list">
         <hawk-text id="drawer-logs" class="mono">{{ previewStatusLabel(preview) }}</hawk-text>
@@ -88,8 +88,8 @@ function tabClass(tab: DrawerTab, activeTab: DrawerTab): string {
       </hawk-view>
       <hawk-view v-if="activeTab === 'debug'" id="drawer-debug">
         <hawk-text id="drawer-debug-preview" class="mono">{{ preview.command }}</hawk-text>
-        <hawk-button id="drawer-run-preview" :width="64" @pointer-press="emit('startPreview')">Run</hawk-button>
-        <hawk-button id="drawer-stop-preview" :width="64" @pointer-press="emit('stopPreview')">Stop</hawk-button>
+        <hawk-button id="drawer-run-preview" :width="64" @pointerdown="emit('startPreview')">Run</hawk-button>
+        <hawk-button id="drawer-stop-preview" :width="64" @pointerdown="emit('stopPreview')">Stop</hawk-button>
       </hawk-view>
       <hawk-view v-if="activeTab === 'problems'" id="drawer-problems">
         <hawk-text v-if="problems.length === 0" id="drawer-problems-empty" class="mono">

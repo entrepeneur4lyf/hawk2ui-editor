@@ -25,7 +25,7 @@ function docId(path: string): string {
       v-for="path in source.paths"
       :id="docId(path)"
       :key="path"
-      @pointer-press="emit('openDoc', path)"
+      @pointerdown="emit('openDoc', path)"
     >
       {{ path }}
     </hawk-button>

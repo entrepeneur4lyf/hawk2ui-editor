@@ -16,7 +16,7 @@ Use Bun for JavaScript tooling because `package.json` declares `packageManager: 
 
 ## Coding Style & Naming Conventions
 
-Use TypeScript throughout. The desktop entry is a native `mount()` tree; Vue prototypes use Vue 3 `<script setup lang="ts">`. Match existing formatting: two-space indentation, double quotes, semicolons, and concise imports. Name Vue components in PascalCase (`AssistantPanel.vue`) and local helpers in camelCase. Prefer Hawk host elements and events already supported by the renderer, such as `hawk-view`, `hawk-text`, `hawk-button`, and `@pointer-press`. Keep `hawk.json` portable; put local editor state in `workspace.hawk` and keep secrets as environment references, not literal values.
+Use TypeScript throughout. The desktop entry is a native `mount()` tree; Vue prototypes use Vue 3 `<script setup lang="ts">`. Match existing formatting: two-space indentation, double quotes, semicolons, and concise imports. Name Vue components in PascalCase (`AssistantPanel.vue`) and local helpers in camelCase. Prefer Hawk host elements and events already supported by the renderer, such as `hawk-view`, `hawk-text`, `hawk-button`, and `@pointerdown`. Keep `hawk.json` portable; put local editor state in `workspace.hawk` and keep secrets as environment references, not literal values.
 
 ## Testing Guidelines
 

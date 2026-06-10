@@ -16,7 +16,7 @@ const emit = defineEmits<{
   <hawk-view id="preview-panel-body">
     <hawk-text id="preview-title">Preview</hawk-text>
     <hawk-text id="preview-state">{{ previewStatusLabel(status) }}</hawk-text>
-    <hawk-button id="preview-start" @pointer-press="emit('start')">Start</hawk-button>
-    <hawk-button id="preview-stop" @pointer-press="emit('stop')">Stop</hawk-button>
+    <hawk-button id="preview-start" @pointerdown="emit('start')">Start</hawk-button>
+    <hawk-button id="preview-stop" @pointerdown="emit('stop')">Stop</hawk-button>
   </hawk-view>
 </template>
