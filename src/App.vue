@@ -28,6 +28,7 @@ import {
   openPanel,
   peekPanel,
   pinPanel,
+  recoverPanelsForViewport,
   selectDrawerTab,
   setDrawerMode,
   statusItemsWithPreview,
@@ -263,6 +264,19 @@ function handleRootKeydown(event: { key?: string }) {
   if (event.key === "Escape") closeActivePeek();
 }
 
+function handleRootResize(event: { width?: number; height?: number }) {
+  if (!Number.isFinite(event.width) || !Number.isFinite(event.height)) return;
+  setWorkbenchPanels(
+    recoverPanelsForViewport(workbench.value.panels, {
+      width: Number(event.width),
+      height: Number(event.height),
+      topBarHeight: 42,
+      bottomReservedHeight: drawerReservedHeight(workbench.value.drawer.mode) + 24,
+      gutterWidth: 34,
+    }),
+  );
+}
+
 function setEditorTheme(theme: ThemePreference) {
   workspace.value = { ...workspace.value, editor: { ...workspace.value.editor, theme } };
 }
@@ -276,6 +290,12 @@ function dockItems(edge: DockEdge): DockPanelItem[] {
   return panelNames
     .map((name) => ({ id: name, label: panelLabels[name], ...workbench.value.panels[name] }))
     .filter((item) => item.mode !== "floating" && item.dockEdge === edge);
+}
+
+function drawerReservedHeight(mode: DrawerMode): number {
+  if (mode === "expanded") return 260;
+  if (mode === "compact") return 150;
+  return 36;
 }
 
 function setActiveEditorTab(id: string) {
@@ -533,7 +553,7 @@ function severityLabel(severity: number | undefined): string {
 </script>
 
 <template>
-  <hawk-view id="editor-root" :class="rootClass" @keydown="handleRootKeydown">
+  <hawk-view id="editor-root" :class="rootClass" @keydown="handleRootKeydown" @resize="handleRootResize">
     <hawk-view id="topbar" class="topbar">
       <hawk-view id="app-brand" class="command-group">
         <hawk-text id="app-title">Hawk2UI Editor</hawk-text>

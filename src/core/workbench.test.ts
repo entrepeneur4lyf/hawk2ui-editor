@@ -9,6 +9,7 @@ import {
   peekPanel,
   pinPanel,
   closePeekedPanel,
+  recoverPanelsForViewport,
   selectDrawerTab,
   setDrawerMode,
   statusItemsWithPreview,
@@ -109,6 +110,43 @@ describe("workbench shell", () => {
 
     const opened = openPanel(panels, "docs");
     expect(opened.docs).toMatchObject({ open: true, mode: "docked", dockEdge: "left" });
+  });
+
+  test("recovers panels into the visible viewport", () => {
+    const panels = {
+      ...defaultWorkbenchPanels(),
+      project: {
+        ...defaultWorkbenchPanels().project,
+        open: true,
+        x: 3000,
+        y: 2000,
+        width: 500,
+        height: 500,
+      },
+      docs: dockPanel(defaultWorkbenchPanels(), "docs", "right").docs,
+    };
+
+    const recovered = recoverPanelsForViewport(panels, {
+      width: 640,
+      height: 420,
+      topBarHeight: 42,
+      bottomReservedHeight: 180,
+      gutterWidth: 34,
+    });
+
+    expect(recovered.project.x).toBeLessThanOrEqual(106);
+    expect(recovered.project.y).toBeLessThanOrEqual(42);
+    expect(recovered.project.width).toBe(500);
+    expect(recovered.project.height).toBe(198);
+    expect(recovered.docs).toMatchObject({
+      mode: "docked",
+      dockEdge: "right",
+      open: true,
+      x: 186,
+      y: 42,
+      width: 420,
+      height: 198,
+    });
   });
 
   test("updates bottom drawer state", () => {

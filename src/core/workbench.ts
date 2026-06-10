@@ -31,6 +31,14 @@ export interface WorkbenchState {
   statusItems: StatusItem[];
 }
 
+export interface WorkbenchViewport {
+  width: number;
+  height: number;
+  topBarHeight?: number;
+  bottomReservedHeight?: number;
+  gutterWidth?: number;
+}
+
 export function defaultWorkbenchPanels(): Record<WorkbenchPanelName, PanelState> {
   return {
     project: normalizePanelState({ open: true, x: 20, y: 56, width: 360, height: 560 }),
@@ -227,6 +235,54 @@ export function normalizePanelState(value: unknown, fallback: PanelState = fallb
   };
 }
 
+export function recoverPanelsForViewport(
+  panels: Record<WorkbenchPanelName, PanelState>,
+  viewport: WorkbenchViewport,
+): Record<WorkbenchPanelName, PanelState> {
+  return Object.fromEntries(
+    Object.entries(panels).map(([name, panel]) => [name, recoverPanelForViewport(panel, viewport)]),
+  ) as Record<WorkbenchPanelName, PanelState>;
+}
+
+export function recoverPanelForViewport(panel: PanelState, viewport: WorkbenchViewport): PanelState {
+  const normalized = normalizePanelState(panel);
+  const gutterWidth = Math.max(0, finiteNumber(viewport.gutterWidth, 34));
+  const topBarHeight = Math.max(0, finiteNumber(viewport.topBarHeight, 42));
+  const bottomReservedHeight = Math.max(0, finiteNumber(viewport.bottomReservedHeight, 180));
+  const viewportWidth = Math.max(160 + gutterWidth * 2, finiteNumber(viewport.width, 1280));
+  const viewportHeight = Math.max(120 + topBarHeight + bottomReservedHeight, finiteNumber(viewport.height, 800));
+  const availableWidth = Math.max(160, viewportWidth - gutterWidth * 2);
+  const availableHeight = Math.max(120, viewportHeight - topBarHeight - bottomReservedHeight);
+  const width = Math.min(normalized.width, availableWidth);
+  const height = Math.min(normalized.height, availableHeight);
+  const minX = normalized.mode === "floating" ? 0 : gutterWidth;
+  const maxX = Math.max(minX, viewportWidth - width - gutterWidth);
+  const minY = topBarHeight;
+  const maxY = Math.max(minY, viewportHeight - bottomReservedHeight - height);
+
+  if (normalized.mode === "docked") {
+    return {
+      ...normalized,
+      x: normalized.dockEdge === "right" ? maxX : gutterWidth,
+      y: minY,
+      width,
+      height,
+    };
+  }
+
+  if (normalized.mode === "minimized") {
+    return { ...normalized, width, height };
+  }
+
+  return {
+    ...normalized,
+    x: clamp(normalized.x, minX, maxX),
+    y: clamp(normalized.y, minY, maxY),
+    width,
+    height,
+  };
+}
+
 export function setDrawerMode(drawer: DrawerState, mode: DrawerMode): DrawerState {
   return { ...drawer, mode };
 }
@@ -310,4 +366,8 @@ function finiteNumber(value: unknown, fallback: number): number {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
+}
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, value));
 }
