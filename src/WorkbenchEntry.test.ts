@@ -87,6 +87,24 @@ describe("interactive workbench entry", () => {
     }
   });
 
+  test("exposes interactive editor tabs and a sidecar entry point", () => {
+    const source = readFileSync(join(import.meta.dir, "WorkbenchEntry.vue"), "utf8");
+    const output = compileHawkVue({ filename: "src/WorkbenchEntry.vue", source });
+    const nodes = flattenNodes(output.compilerArtifact.root as CompiledNode);
+    const artifact = output.compilerArtifact as CompiledArtifact;
+
+    for (const id of ["editor-tab-app", "editor-tab-readme", "editor-tab-manifest", "editor-open-sidecar"]) {
+      const node = nodes.find((candidate) => candidate.id === id);
+      expect(node?.kind).toBe("button");
+      expect(node?.events?.some((event) => event.kind === "pointer.press")).toBe(true);
+    }
+
+    expect(dynamicInitialString(artifact, "editorPath")).toBe("src/App.vue");
+    expect(handlerSetString(artifact, "selectReadmeTab", "editorPath")).toBe("README.md");
+    expect(handlerSetString(artifact, "selectManifestTab", "editorPath")).toBe("hawk.json");
+    expect(handlerSetString(artifact, "openEditorSidecar", "sidecarState")).toBe("requested");
+  });
+
   test("groups topbar commands into project, run, panel, and overflow clusters", () => {
     const source = readFileSync(join(import.meta.dir, "WorkbenchEntry.vue"), "utf8");
     const output = compileHawkVue({ filename: "src/WorkbenchEntry.vue", source });
@@ -193,11 +211,23 @@ function dynamicInitialBoolean(artifact: CompiledArtifact, name: string): boolea
   return value?.type === "bool" && typeof value.value === "boolean" ? value.value : undefined;
 }
 
+function dynamicInitialString(artifact: CompiledArtifact, name: string): string | undefined {
+  const value = artifact.initial_dynamic_values.find((entry) => entry.name === name)?.value;
+  return value?.type === "string" && typeof value.value === "string" ? value.value : undefined;
+}
+
 function handlerSetBoolean(artifact: CompiledArtifact, handlerName: string, dynamicName: string): boolean | undefined {
   const value = artifact.event_handlers
     .find((handler) => handler.name === handlerName)
     ?.actions.find((action) => action.type === "set_dynamic_value" && action.name === dynamicName)?.value;
   return value?.type === "bool" && typeof value.value === "boolean" ? value.value : undefined;
+}
+
+function handlerSetString(artifact: CompiledArtifact, handlerName: string, dynamicName: string): string | undefined {
+  const value = artifact.event_handlers
+    .find((handler) => handler.name === handlerName)
+    ?.actions.find((action) => action.type === "set_dynamic_value" && action.name === dynamicName)?.value;
+  return value?.type === "string" && typeof value.value === "string" ? value.value : undefined;
 }
 
 function hasVisibilityBinding(artifact: CompiledArtifact, nodeId: string, dependency: string): boolean {

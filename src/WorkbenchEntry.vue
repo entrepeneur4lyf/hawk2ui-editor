@@ -12,6 +12,12 @@ const panelMode = ref("floating");
 const leftDockVisible = ref(false);
 const rightDockVisible = ref(false);
 const editorNotice = ref("App.vue is open. Use Open Sidecar for selectable CodeMirror editing.");
+const editorPath = ref("src/App.vue");
+const editorLanguage = ref("Vue / TypeScript");
+const editorLine1 = ref('1  &lt;script setup lang="ts"&gt;');
+const editorLine2 = ref('2  const workbench = "interactive";');
+const editorLine3 = ref("3  &lt;/script&gt;");
+const sidecarState = ref("disabled");
 const previewState = ref("stopped");
 
 function openProject() {
@@ -123,6 +129,44 @@ function restorePanel() {
   status.value = `${activePanel.value} restored`;
 }
 
+function selectAppTab() {
+  editorPath.value = "src/App.vue";
+  editorLanguage.value = "Vue / TypeScript";
+  editorLine1.value = '1  &lt;script setup lang="ts"&gt;';
+  editorLine2.value = '2  const workbench = "interactive";';
+  editorLine3.value = "3  &lt;/script&gt;";
+  editorNotice.value = "App.vue is open. Use Open Sidecar for selectable CodeMirror editing.";
+  status.value = "App.vue selected";
+}
+
+function selectReadmeTab() {
+  editorPath.value = "README.md";
+  editorLanguage.value = "Markdown";
+  editorLine1.value = "1  # Hawk2UI Editor";
+  editorLine2.value = "2";
+  editorLine3.value = "3  Local dogfood app for building a Hawk2UI single-project editor.";
+  editorNotice.value = "README.md is open. Docs can be edited through the sidecar when writable.";
+  status.value = "README.md selected";
+}
+
+function selectManifestTab() {
+  editorPath.value = "hawk.json";
+  editorLanguage.value = "JSON";
+  editorLine1.value = "1  {";
+  editorLine2.value = '2    "app": { "entry": "src/WorkbenchEntry.vue", "framework": "vue" },';
+  editorLine3.value = '3    "targets": { "desktop": [{ "name": "main" }] }';
+  editorNotice.value = "hawk.json is open. Manifest edits should stay portable.";
+  status.value = "hawk.json selected";
+}
+
+function openEditorSidecar() {
+  sidecarState.value = "requested";
+  drawerTab.value = "Logs";
+  drawerBody.value = "Editor sidecar request queued for the active file.";
+  editorNotice.value = "Sidecar request queued. CodeMirror provides selectable editing.";
+  status.value = "Editor sidecar requested";
+}
+
 function collapseDrawer() {
   drawerMode.value = "collapsed";
   drawerHeight.value = 36;
@@ -206,11 +250,19 @@ function openTerminal() {
       </hawk-view>
 
       <hawk-view id="editor-workspace" class="editor-workspace" width="852" :height="workspaceHeight">
-        <hawk-text id="editor-tabs" class="mono" width="852" height="34">App.vue    README.md    hawk.json</hawk-text>
-        <hawk-text id="editor-path" class="muted" width="852" height="28">src/App.vue / interactive Hawk entry</hawk-text>
-        <hawk-text id="editor-line-1" class="code-line" width="852" height="28">1  &lt;script setup lang="ts"&gt;</hawk-text>
-        <hawk-text id="editor-line-2" class="code-line" width="852" height="28">2  const workbench = "interactive";</hawk-text>
-        <hawk-text id="editor-line-3" class="code-line" width="852" height="28">3  &lt;/script&gt;</hawk-text>
+        <hawk-view id="editor-tabs" class="editor-tabs" width="852" height="34">
+          <hawk-button id="editor-tab-app" width="86" @pointerdown="selectAppTab">App.vue</hawk-button>
+          <hawk-button id="editor-tab-readme" width="102" @pointerdown="selectReadmeTab">README.md</hawk-button>
+          <hawk-button id="editor-tab-manifest" width="96" @pointerdown="selectManifestTab">hawk.json</hawk-button>
+        </hawk-view>
+        <hawk-text id="editor-path" class="muted" width="852" height="28">{{ editorPath }} / {{ editorLanguage }}</hawk-text>
+        <hawk-text id="editor-line-1" class="code-line" width="852" height="28">{{ editorLine1 }}</hawk-text>
+        <hawk-text id="editor-line-2" class="code-line" width="852" height="28">{{ editorLine2 }}</hawk-text>
+        <hawk-text id="editor-line-3" class="code-line" width="852" height="28">{{ editorLine3 }}</hawk-text>
+        <hawk-view id="editor-actions" class="editor-actions" width="852" height="34">
+          <hawk-button id="editor-open-sidecar" width="132" @pointerdown="openEditorSidecar">Open Sidecar</hawk-button>
+          <hawk-text id="editor-sidecar-state" class="muted" width="180">Sidecar: {{ sidecarState }}</hawk-text>
+        </hawk-view>
         <hawk-text id="editor-notice" class="muted" width="852" height="32">{{ editorNotice }}</hawk-text>
       </hawk-view>
 
