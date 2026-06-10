@@ -1,17 +1,17 @@
 .editor-root {
-  background-color: token(color.surface);
+  background-color: token(color.surface.black);
   color: #f4f7fb;
   font-size: 13px;
   overflow: hidden;
 }
 
 .theme-black {
-  background-color: token(color.surface);
+  background-color: token(color.surface.black);
   color: #f4f7fb;
 }
 
 .theme-light {
-  background-color: token(color.surface);
+  background-color: token(color.surface.light);
   color: #111820;
 }
 
@@ -20,12 +20,12 @@
 }
 
 .theme-black .topbar {
-  background-color: token(color.surface);
+  background-color: token(color.surface.chrome);
   border-width: 1px;
 }
 
 .theme-light .topbar {
-  background-color: token(color.surface);
+  background-color: token(color.surface.light.chrome);
   border-width: 1px;
 }
 
@@ -34,31 +34,31 @@
 }
 
 .workspace {
-  background-color: token(color.surface);
+  background-color: token(color.surface.black);
   overflow: hidden;
 }
 
 .theme-light .workspace {
-  background-color: token(color.surface);
+  background-color: token(color.surface.light);
 }
 
 .editor-workspace {
-  background-color: token(color.surface);
+  background-color: token(color.surface.editor);
   overflow: hidden;
 }
 
 .theme-light .editor-workspace {
-  background-color: token(color.surface);
+  background-color: token(color.surface.light.editor);
 }
 
 .editor-tabs {
   display: flex;
-  background-color: token(color.surface);
+  background-color: token(color.surface.chrome);
   border-width: 1px;
 }
 
 .theme-light .editor-tabs {
-  background-color: token(color.surface);
+  background-color: token(color.surface.light.chrome);
 }
 
 .editor-tab {
@@ -71,28 +71,28 @@
 
 .editor-meta {
   display: flex;
-  background-color: token(color.surface);
+  background-color: token(color.surface.panel);
 }
 
 .editor-buffer {
-  background-color: token(color.surface);
+  background-color: token(color.surface.black);
   border-width: 1px;
   overflow: hidden;
 }
 
 .bottom-drawer {
-  background-color: token(color.surface);
+  background-color: token(color.surface.drawer);
   border-width: 1px;
   overflow: hidden;
 }
 
 .drawer-toolbar {
   display: flex;
-  background-color: token(color.surface);
+  background-color: token(color.surface.chrome);
 }
 
 .drawer-body {
-  background-color: token(color.surface);
+  background-color: token(color.surface.drawer);
 }
 
 .drawer-tab {
@@ -110,14 +110,14 @@
 
 .status-bar {
   display: flex;
-  background-color: token(color.surface);
+  background-color: token(color.surface.chrome);
   border-width: 1px;
   font-size: 12px;
   overflow: hidden;
 }
 
 .panel {
-  background-color: token(color.surface);
+  background-color: token(color.surface.panel);
   color: #f4f7fb;
   border-width: 1px;
   border-radius: 8px;
@@ -127,12 +127,12 @@
 
 .panel-header {
   display: flex;
-  background-color: token(color.surface);
+  background-color: token(color.surface.chrome);
   border-width: 1px;
 }
 
 .panel-docked {
-  background-color: token(color.surface);
+  background-color: token(color.surface.drawer);
 }
 
 .panel-pinned {
@@ -146,17 +146,17 @@
 
 .dock-gutter {
   display: flex;
-  background-color: token(color.surface);
+  background-color: token(color.surface.black);
   border-width: 1px;
   overflow: hidden;
 }
 
 .dock-gutter-left {
-  background-color: token(color.surface);
+  background-color: token(color.surface.panel);
 }
 
 .dock-gutter-right {
-  background-color: token(color.surface);
+  background-color: token(color.surface.panel);
 }
 
 .dock-icon {
@@ -218,43 +218,43 @@
 }
 
 .theme-light .panel {
-  background-color: token(color.surface);
+  background-color: token(color.surface.light.editor);
   color: #111820;
 }
 
 .theme-light .bottom-drawer {
-  background-color: token(color.surface);
+  background-color: token(color.surface.light);
   color: #111820;
 }
 
 .theme-light .status-bar {
-  background-color: token(color.surface);
+  background-color: token(color.surface.light.chrome);
   color: #111820;
 }
 
 .theme-light .editor-buffer {
-  background-color: token(color.surface);
+  background-color: token(color.surface.light.editor);
   color: #111820;
 }
 
 .theme-light .editor-meta {
-  background-color: token(color.surface);
+  background-color: token(color.surface.light);
 }
 
 .theme-light .drawer-toolbar {
-  background-color: token(color.surface);
+  background-color: token(color.surface.light.chrome);
 }
 
 .theme-light .drawer-body {
-  background-color: token(color.surface);
+  background-color: token(color.surface.light.editor);
 }
 
 .theme-light .dock-gutter {
-  background-color: token(color.surface);
+  background-color: token(color.surface.light.chrome);
 }
 
 .theme-light .panel-header {
-  background-color: token(color.surface);
+  background-color: token(color.surface.light.chrome);
 }
 
 .theme-light .muted {
