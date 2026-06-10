@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { handleBridgeRequest } from "./server";
 import { currentPreviewStatus, stopPreview } from "./preview";
+import { stopAllLspSessions } from "./lsp/manager";
 
 let root = "";
 
@@ -14,6 +15,7 @@ beforeEach(async () => {
 });
 
 afterEach(async () => {
+  stopAllLspSessions();
   await rm(root, { recursive: true, force: true });
 });
 
@@ -68,5 +70,29 @@ describe("bridge editor sidecar routes", () => {
       lastError: null,
       message: "Editor sidecar is closed.",
     });
+  });
+});
+
+describe("bridge LSP routes", () => {
+  test("returns stopped LSP status for a project root", async () => {
+    const response = await handleBridgeRequest(
+      new Request(`http://bridge/lsp/status?root=${encodeURIComponent(root)}`),
+    );
+
+    expect(response.status).toBe(200);
+    await expect(response.json()).resolves.toMatchObject({
+      state: "stopped",
+      root,
+      server: "typescript",
+      diagnosticCount: 0,
+      lastError: null,
+    });
+  });
+
+  test("requires a root for LSP status", async () => {
+    const response = await handleBridgeRequest(new Request("http://bridge/lsp/status"));
+
+    expect(response.status).toBe(500);
+    await expect(response.json()).resolves.toEqual({ error: "missing query parameter: root" });
   });
 });

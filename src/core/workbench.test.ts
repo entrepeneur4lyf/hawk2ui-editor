@@ -17,6 +17,7 @@ describe("workbench shell", () => {
     expect(state.drawer).toEqual({ mode: "compact", activeTab: "logs" });
     expect(state.statusItems.map((item) => item.id)).toContain("bridge");
     expect(state.statusItems.map((item) => item.id)).toContain("sidecar");
+    expect(state.statusItems.map((item) => item.id)).toContain("lsp");
   });
 
   test("toggles recoverable floating panels without sidebars", () => {

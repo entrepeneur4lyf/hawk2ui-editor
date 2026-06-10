@@ -43,6 +43,34 @@ interface EditorSidecarStatus {
   message: string;
 }
 
+interface LspDiagnostic {
+  range: { start: { line: number; character: number }; end: { line: number; character: number } };
+  severity?: number;
+  code?: string | number;
+  source?: string;
+  message: string;
+}
+
+interface LspStatus {
+  state: "stopped" | "starting" | "running" | "failed";
+  root: string;
+  server: "typescript";
+  message: string;
+  diagnostics: Record<string, LspDiagnostic[]>;
+  diagnosticCount: number;
+  lastError: string | null;
+  startedAt: string | null;
+}
+
+interface ProblemEntry {
+  path: string;
+  line: number;
+  column: number;
+  severity: string;
+  message: string;
+  source?: string;
+}
+
 const workspace = ref(defaultWorkspaceDocument("/home/shawn/workspace/hawk2ui-editor"));
 const workbench = ref(createWorkbenchState(workspace.value.project.root));
 const documents = ref(createDocumentState(workbench.value.editorTabs, workbench.value.activeEditorTabId));
@@ -77,18 +105,24 @@ const profile = computed(() => activeProfile(workspace.value));
 const activeTab = computed(() => activeDocument(documents.value));
 const statusItems = computed(() => statusItemsWithPreview(workbench.value.statusItems, preview.value.state));
 const sidecar = ref<EditorSidecarStatus | null>(null);
+const lsp = ref<LspStatus | null>(null);
 const sidecarAvailable = computed(() => sidecar.value?.state === "open");
-let editorStatusTimer: ReturnType<typeof setInterval> | null = null;
+const problems = computed(() => lspProblems(lsp.value, workspace.value.project.root));
+let statusTimer: ReturnType<typeof setInterval> | null = null;
 
 onMounted(() => {
   void refreshProjectTree();
   void openProjectFile("src/App.vue");
   void refreshEditorStatus();
-  editorStatusTimer = setInterval(() => void refreshEditorStatus(), 1500);
+  void refreshLspStatus();
+  statusTimer = setInterval(() => {
+    void refreshEditorStatus();
+    void refreshLspStatus();
+  }, 1500);
 });
 
 onBeforeUnmount(() => {
-  if (editorStatusTimer) clearInterval(editorStatusTimer);
+  if (statusTimer) clearInterval(statusTimer);
 });
 
 function closePanel(name: WorkbenchPanelName) {
@@ -179,6 +213,16 @@ async function refreshEditorStatus() {
   }
 }
 
+async function refreshLspStatus() {
+  try {
+    applyLspStatus(
+      await bridgeJson<LspStatus>(`/lsp/status?root=${encodeURIComponent(workspace.value.project.root)}`),
+    );
+  } catch {
+    setStatusItem("lsp", "unknown", "warn");
+  }
+}
+
 async function openProjectFile(path: string) {
   try {
     const file = await bridgeJson<{ path: string; content: string }>(
@@ -232,6 +276,21 @@ function applySidecarStatus(status: EditorSidecarStatus) {
   setStatusItem("sidecar", sidecarStatusValue(status), sidecarStatusTone(status));
 }
 
+function applyLspStatus(status: LspStatus) {
+  lsp.value = status;
+  if (status.state === "failed") {
+    setStatusItem("lsp", "failed", "error");
+    return;
+  }
+
+  if (status.diagnosticCount > 0) {
+    setStatusItem("lsp", `${status.diagnosticCount} issues`, "warn");
+    return;
+  }
+
+  setStatusItem("lsp", status.state === "running" ? "ready" : "off", status.state === "running" ? "ok" : "muted");
+}
+
 function sidecarStatusValue(status: EditorSidecarStatus): string {
   if (status.state === "open") return `${status.dirty ? "dirty" : "open"} ${status.line}:${status.column}`;
   return status.state;
@@ -242,6 +301,39 @@ function sidecarStatusTone(status: EditorSidecarStatus): "ok" | "warn" | "error"
   if (status.state === "opening" || status.dirty) return "warn";
   if (status.state === "open") return "ok";
   return "muted";
+}
+
+function lspProblems(status: LspStatus | null, projectRoot: string): ProblemEntry[] {
+  if (!status) return [];
+
+  return Object.entries(status.diagnostics).flatMap(([uri, diagnostics]) => {
+    return diagnostics.map((diagnostic) => ({
+      path: fileUriLabel(uri, projectRoot),
+      line: diagnostic.range.start.line + 1,
+      column: diagnostic.range.start.character + 1,
+      severity: severityLabel(diagnostic.severity),
+      source: diagnostic.source,
+      message: diagnostic.message,
+    }));
+  });
+}
+
+function fileUriLabel(uri: string, projectRoot: string): string {
+  try {
+    const path = decodeURIComponent(new URL(uri).pathname);
+    const prefix = projectRoot.endsWith("/") ? projectRoot : `${projectRoot}/`;
+    return path.startsWith(prefix) ? path.slice(prefix.length) : path;
+  } catch {
+    return uri;
+  }
+}
+
+function severityLabel(severity: number | undefined): string {
+  if (severity === 1) return "error";
+  if (severity === 2) return "warning";
+  if (severity === 3) return "info";
+  if (severity === 4) return "hint";
+  return "diagnostic";
 }
 </script>
 
@@ -291,6 +383,7 @@ function sidecarStatusTone(status: EditorSidecarStatus): "ok" | "warn" | "error"
       :mode="workbench.drawer.mode"
       :active-tab="workbench.drawer.activeTab"
       :preview="preview"
+      :problems="problems"
       @select-tab="selectDrawer"
       @set-mode="setDrawer"
       @start-preview="preview.state = 'starting'"

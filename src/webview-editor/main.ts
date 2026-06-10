@@ -9,10 +9,16 @@ import {
   keymap,
   lineNumbers,
 } from "@codemirror/view";
+import { installLspClient, supportsLspLanguage } from "./lspClient";
 
 interface InitialEditorState {
   path: string;
+  projectRoot?: string;
   filePath: string;
+  fileUri?: string;
+  rootUri?: string;
+  languageId?: string;
+  lspUrl?: string;
   text: string;
 }
 
@@ -66,6 +72,22 @@ const view = new EditorView({
     ],
   }),
 });
+
+if (initial.lspUrl && initial.fileUri && initial.rootUri && initial.languageId && supportsLspLanguage(initial.languageId)) {
+  void installLspClient(
+    view,
+    {
+      lspUrl: initial.lspUrl,
+      fileUri: initial.fileUri,
+      rootUri: initial.rootUri,
+      languageId: initial.languageId,
+    },
+    (message) => {
+      updateStatus("LSP unavailable");
+      post({ type: "editorError", path: initial.path, message });
+    },
+  );
+}
 
 document.getElementById("save")?.addEventListener("click", save);
 window.addEventListener("keydown", (event) => {

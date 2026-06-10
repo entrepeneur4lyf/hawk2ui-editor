@@ -30,3 +30,15 @@ The published package provides native optional packages for the supported deskto
 ```bash
 bun -e "const webview = await import('@hawk2ui/editor-webview'); console.log(webview.getWebviewVersion())"
 ```
+
+## LSP bridge
+
+CodeMirror uses `@codemirror/lsp-client` inside the sidecar. The language server runs in the Bun bridge, not in the Hawk frontend or the webview. Browser JSON-RPC messages go through `ws://127.0.0.1:$HAWK2UI_EDITOR_BRIDGE_PORT/lsp?root=...`; the bridge translates them to `typescript-language-server --stdio` frames and mirrors diagnostics to `GET /lsp/status?root=...`.
+
+The first LSP slice is enabled for JavaScript and TypeScript files. Vue SFC support should use a future Volar-backed server path.
+
+Verify the installed language server:
+
+```bash
+bunx typescript-language-server --version
+```

@@ -3,10 +3,20 @@ import type { DrawerMode, DrawerTab } from "../core/workbench";
 import type { PreviewStatus } from "../preview/previewClient";
 import { previewStatusLabel } from "../preview/previewClient";
 
+export interface ProblemEntry {
+  path: string;
+  line: number;
+  column: number;
+  severity: string;
+  message: string;
+  source?: string;
+}
+
 defineProps<{
   mode: DrawerMode;
   activeTab: DrawerTab;
   preview: PreviewStatus;
+  problems: ProblemEntry[];
 }>();
 
 const emit = defineEmits<{
@@ -56,9 +66,22 @@ const tabs: DrawerTab[] = ["terminal", "logs", "debug", "problems"];
         <hawk-button id="drawer-run-preview" @pointer-press="emit('startPreview')">Run</hawk-button>
         <hawk-button id="drawer-stop-preview" @pointer-press="emit('stopPreview')">Stop</hawk-button>
       </hawk-view>
-      <hawk-text v-if="activeTab === 'problems'" id="drawer-problems" class="mono">
-        No validation problems.
-      </hawk-text>
+      <hawk-view v-if="activeTab === 'problems'" id="drawer-problems">
+        <hawk-text v-if="problems.length === 0" id="drawer-problems-empty" class="mono">
+          No validation problems.
+        </hawk-text>
+        <template v-else>
+          <hawk-text
+            v-for="(problem, index) in problems"
+            :id="`drawer-problem-${index}`"
+            :key="`${problem.path}-${problem.line}-${problem.column}-${problem.message}`"
+            class="mono"
+          >
+            {{ problem.path }}:{{ problem.line }}:{{ problem.column }} {{ problem.severity }}
+            {{ problem.source ? `[${problem.source}]` : "" }} {{ problem.message }}
+          </hawk-text>
+        </template>
+      </hawk-view>
     </hawk-view>
   </hawk-view>
 </template>

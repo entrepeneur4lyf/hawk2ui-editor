@@ -73,6 +73,7 @@ export function createWorkbenchState(projectRoot: string): WorkbenchState {
       { id: "manifest", label: "Manifest", value: "valid", tone: "ok" },
       { id: "bridge", label: "Bridge", value: "disconnected", tone: "warn" },
       { id: "sidecar", label: "Sidecar", value: "disabled", tone: "muted" },
+      { id: "lsp", label: "LSP", value: "off", tone: "muted" },
       { id: "preview", label: "Preview", value: "stopped", tone: "muted" },
       { id: "cpu", label: "CPU", value: "--", tone: "muted" },
       { id: "mem", label: "MEM", value: "--", tone: "muted" },

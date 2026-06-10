@@ -3,13 +3,46 @@ import { listProjectTree, readProjectFile, writeProjectFile } from "./files";
 import { currentPreviewStatus, startPreview, stopPreview } from "./preview";
 import { streamAssistantText } from "./assistant";
 import { closeEditorSidecar, currentEditorSidecarState, openEditorSidecar } from "./webviewEditor";
+import { connectLspClient, currentLspStatus, disconnectLspClient, receiveLspClientMessage } from "./lsp/manager";
+import type { JsonRpcMessage } from "./lsp/protocol";
 
 const port = Number(process.env.HAWK2UI_EDITOR_BRIDGE_PORT ?? "47321");
 
+interface LspSocketData {
+  root: string;
+  client: { send(message: JsonRpcMessage): void };
+}
+
 export function createBridgeServer() {
-  return Bun.serve({
+  return Bun.serve<LspSocketData>({
     port,
-    fetch: handleBridgeRequest,
+    fetch(request, server) {
+      const url = new URL(request.url);
+      if (url.pathname === "/lsp" && request.headers.get("upgrade")?.toLowerCase() === "websocket") {
+        const root = url.searchParams.get("root") ?? process.cwd();
+        const client = { send() {} };
+        if (server.upgrade(request, { data: { root, client } })) return;
+        return json({ error: "websocket upgrade failed" }, 400);
+      }
+      return handleBridgeRequest(request);
+    },
+    websocket: {
+      open(socket) {
+        socket.data.client = {
+          send(message: JsonRpcMessage) {
+            socket.send(JSON.stringify(message));
+          },
+        };
+        connectLspClient(socket.data.root, socket.data.client);
+      },
+      message(socket, message) {
+        if (typeof message !== "string") return;
+        receiveLspClientMessage(socket.data.root, JSON.parse(message) as JsonRpcMessage);
+      },
+      close(socket) {
+        disconnectLspClient(socket.data.root, socket.data.client);
+      },
+    },
   });
 }
 
@@ -56,6 +89,10 @@ export async function handleBridgeRequest(request: Request): Promise<Response> {
 
     if (request.method === "GET" && url.pathname === "/editor/status") {
       return json(currentEditorSidecarState());
+    }
+
+    if (request.method === "GET" && url.pathname === "/lsp/status") {
+      return json(currentLspStatus(requiredSearchParam(url, "root")));
     }
 
     if (request.method === "POST" && url.pathname === "/editor/open") {

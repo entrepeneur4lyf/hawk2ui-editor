@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { Application, Theme, WebviewApplicationEvent } from "@hawk2ui/editor-webview";
 import { writeProjectFile } from "./files";
+import { pathToFileUri } from "./lsp/protocol";
 
 interface EditorSidecarPayload {
   projectRoot: string;
@@ -18,6 +19,7 @@ if (!payloadPath) {
 const payload = JSON.parse(readFileSync(payloadPath, "utf8")) as EditorSidecarPayload;
 const css = readFileSync("src/webview-editor/editor.css", "utf8");
 const script = readFileSync(payload.scriptPath, "utf8");
+const bridgePort = Number(process.env.HAWK2UI_EDITOR_BRIDGE_PORT ?? "47321");
 const app = new Application();
 const window = app.createBrowserWindow({
   title: `Hawk2UI Editor - ${payload.filePath}`,
@@ -29,7 +31,12 @@ const webview = window.createWebview({
   html: editorHtml(css, script),
   preload: `window.__HAWK_EDITOR_INITIAL__ = ${JSON.stringify({
     path: payload.relativePath,
+    projectRoot: payload.projectRoot,
     filePath: payload.filePath,
+    fileUri: pathToFileUri(payload.projectRoot, payload.relativePath),
+    rootUri: pathToFileUri(payload.projectRoot, "."),
+    languageId: languageIdForPath(payload.relativePath),
+    lspUrl: `ws://127.0.0.1:${bridgePort}/lsp?root=${encodeURIComponent(payload.projectRoot)}`,
     text: payload.initialText,
   })};`,
   theme: Theme.Dark,
@@ -100,6 +107,19 @@ function forwardLifecycleMessage(message: { type: string; text?: string }): void
 
 function postToParent(message: Record<string, unknown>): void {
   console.log(`HAWK_EDITOR_EVENT ${JSON.stringify(message)}`);
+}
+
+function languageIdForPath(path: string): string {
+  const lowerPath = path.toLowerCase();
+  if (lowerPath.endsWith(".vue")) return "vue";
+  if (lowerPath.endsWith(".tsx")) return "typescriptreact";
+  if (lowerPath.endsWith(".ts")) return "typescript";
+  if (lowerPath.endsWith(".jsx")) return "javascriptreact";
+  if (lowerPath.endsWith(".js")) return "javascript";
+  if (lowerPath.endsWith(".json")) return "json";
+  if (lowerPath.endsWith(".md") || lowerPath.endsWith(".markdown")) return "markdown";
+  if (lowerPath.endsWith(".css")) return "css";
+  return "plaintext";
 }
 
 function escapeInlineScript(scriptText: string): string {
