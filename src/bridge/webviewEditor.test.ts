@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { closeEditorSidecar, currentEditorSidecarState, openEditorSidecar } from "./webviewEditor";
+import { closeEditorSidecar, currentEditorSidecarState, openEditorSidecar, webviewPackageName } from "./webviewEditor";
 
 let directory = "";
 
@@ -17,6 +17,10 @@ afterEach(() => {
 });
 
 describe("webview editor sidecar", () => {
+  test("loads the Hawk2UI scoped webview package", () => {
+    expect(webviewPackageName).toBe("@hawk2ui/editor-webview");
+  });
+
   test("starts closed", () => {
     expect(currentEditorSidecarState()).toEqual({
       state: "closed",

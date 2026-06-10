@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
-import { Application, Theme, WebviewApplicationEvent } from "@webviewjs/webview";
+import { Application, Theme, WebviewApplicationEvent } from "@hawk2ui/editor-webview";
 import { writeProjectFile } from "./files";
 
 interface EditorSidecarPayload {

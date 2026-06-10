@@ -24,6 +24,8 @@ let state: EditorSidecarState = {
 
 let activeProcess: ReturnType<typeof Bun.spawn> | null = null;
 
+export const webviewPackageName = "@hawk2ui/editor-webview";
+
 export function currentEditorSidecarState(): EditorSidecarState {
   return { ...state };
 }
@@ -111,10 +113,12 @@ export async function openEditorSidecar(projectRoot: string, relativePath: strin
 
 async function verifyWebviewBinding(): Promise<void> {
   try {
-    await import("@webviewjs/webview");
+    await import("@hawk2ui/editor-webview");
   } catch (error) {
     throw new Error(
-      `WebviewJS native binding is unavailable: ${error instanceof Error ? error.message : "unknown import failure"}`,
+      `Hawk2UI editor webview native binding is unavailable: ${
+        error instanceof Error ? error.message : "unknown import failure"
+      }`,
     );
   }
 }

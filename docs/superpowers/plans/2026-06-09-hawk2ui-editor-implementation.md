@@ -1814,7 +1814,7 @@ Update `package.json` dependencies with:
   "@codemirror/lang-javascript": "^6.2.5",
   "@codemirror/state": "^6.6.0",
   "@codemirror/view": "^6.43.1",
-  "@webviewjs/webview": "^0.1.4"
+  "@hawk2ui/editor-webview": "^0.1.4"
 }
 ```
 
@@ -1862,7 +1862,7 @@ export async function openEditorSidecar(filePath: string): Promise<EditorSidecar
   }
 
   state = { state: "opening", filePath: resolved, message: "Opening WebviewJS editor sidecar." };
-  const { Application } = await import("@webviewjs/webview");
+  const { Application } = await import("@hawk2ui/editor-webview");
   const html = readFileSync(resolve("src/webview-editor/index.html"), "utf8");
   const initialText = readFileSync(resolved, "utf8");
 
@@ -2054,7 +2054,7 @@ hawk2ui-cli validate
 
 Expected: tests, build, and validation pass. If WebviewJS native install or runtime behavior fails on the current platform, record the exact failure and keep the sidecar task behind a feature flag until the fallback is chosen.
 
-Verification note: `bun test`, the browser editor bundle, `bun run build`, and `hawk2ui-cli validate` pass. The enabled WebviewJS probe fails on this Linux x64 environment because `@webviewjs/webview@0.1.4` cannot load its native binding after npm returns 404 for `@webviewjs/webview-linux-x64-gnu`; the sidecar is gated behind `HAWK2UI_EDITOR_WEBVIEW_SIDECAR=1` and reports that failure explicitly.
+Verification note: `bun test`, the browser editor bundle, `bun run build`, and `hawk2ui-cli validate` pass. The sidecar now uses the published `@hawk2ui/editor-webview@0.1.4` package, whose supported native optional packages are published under the same version. The sidecar remains gated behind `HAWK2UI_EDITOR_WEBVIEW_SIDECAR=1`.
 
 - [x] **Step 11: Local checkpoint**
 
