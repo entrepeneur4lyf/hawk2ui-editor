@@ -87,6 +87,32 @@ describe("interactive workbench entry", () => {
     }
   });
 
+  test("switches floating panel body content for each workbench panel", () => {
+    const source = readFileSync(join(import.meta.dir, "WorkbenchEntry.vue"), "utf8");
+    const output = compileHawkVue({ filename: "src/WorkbenchEntry.vue", source });
+    const nodes = flattenNodes(output.compilerArtifact.root as CompiledNode);
+    const artifact = output.compilerArtifact as CompiledArtifact;
+
+    for (const id of ["active-panel-primary", "active-panel-secondary", "panel-open-app", "panel-open-readme"]) {
+      const node = nodes.find((candidate) => candidate.id === id);
+      expect(node?.kind).toBe(id.startsWith("panel-open-") ? "button" : "text");
+    }
+
+    expect(dynamicInitialString(artifact, "panelBodyPrimary")).toBe("Project files: App.vue, WorkbenchEntry.vue, README.md.");
+    expect(handlerSetString(artifact, "showDocs", "panelBodyPrimary")).toBe(
+      "Docs browser: specs and plans open as editor tabs.",
+    );
+    expect(handlerSetString(artifact, "showChat", "panelBodyPrimary")).toBe(
+      "Checkpoint chat: current implementation slice is active.",
+    );
+    expect(handlerSetString(artifact, "showEditorSettings", "panelBodyPrimary")).toBe(
+      "Editor settings: black theme, monospace code, sidecar auto-start.",
+    );
+    expect(handlerSetString(artifact, "showChatSettings", "panelBodyPrimary")).toBe(
+      "Chat settings: provider profiles stay behind the bridge.",
+    );
+  });
+
   test("exposes interactive editor tabs and a sidecar entry point", () => {
     const source = readFileSync(join(import.meta.dir, "WorkbenchEntry.vue"), "utf8");
     const output = compileHawkVue({ filename: "src/WorkbenchEntry.vue", source });

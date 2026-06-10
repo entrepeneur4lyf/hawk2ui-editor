@@ -9,6 +9,8 @@ const workspaceHeight = ref(604);
 const drawerBody = ref("Bridge idle. Use Validate, Build, Run, or Terminal.");
 const activePanel = ref("Project");
 const panelMode = ref("floating");
+const panelBodyPrimary = ref("Project files: App.vue, WorkbenchEntry.vue, README.md.");
+const panelBodySecondary = ref("Open files into editor tabs; CodeMirror sidecar follows the active file.");
 const leftDockVisible = ref(false);
 const rightDockVisible = ref(false);
 const editorNotice = ref("App.vue is open. CodeMirror sidecar starts automatically from the bridge main process.");
@@ -22,6 +24,8 @@ const previewState = ref("stopped");
 
 function openProject() {
   activePanel.value = "Project";
+  panelBodyPrimary.value = "Project files: App.vue, WorkbenchEntry.vue, README.md.";
+  panelBodySecondary.value = "Open files into editor tabs; CodeMirror sidecar follows the active file.";
   status.value = "Project panel active";
 }
 
@@ -69,30 +73,40 @@ function openPalette() {
 function showProject() {
   activePanel.value = "Project";
   panelMode.value = "floating";
+  panelBodyPrimary.value = "Project files: App.vue, WorkbenchEntry.vue, README.md.";
+  panelBodySecondary.value = "Open files into editor tabs; CodeMirror sidecar follows the active file.";
   status.value = "Project panel active";
 }
 
 function showChat() {
   activePanel.value = "Chat";
   panelMode.value = "floating";
+  panelBodyPrimary.value = "Checkpoint chat: current implementation slice is active.";
+  panelBodySecondary.value = "Assistant tools can create checkpoints and mark work complete later.";
   status.value = "Chat panel active";
 }
 
 function showDocs() {
   activePanel.value = "Docs";
   panelMode.value = "floating";
+  panelBodyPrimary.value = "Docs browser: specs and plans open as editor tabs.";
+  panelBodySecondary.value = "Use docs tabs for workbench UX, editor, and AI chat specifications.";
   status.value = "Docs panel active";
 }
 
 function showEditorSettings() {
   activePanel.value = "Editor Settings";
   panelMode.value = "floating";
+  panelBodyPrimary.value = "Editor settings: black theme, monospace code, sidecar auto-start.";
+  panelBodySecondary.value = "Future controls: font size, wrapping, tab width, and diagnostics.";
   status.value = "Editor settings active";
 }
 
 function showChatSettings() {
   activePanel.value = "Chat Settings";
   panelMode.value = "floating";
+  panelBodyPrimary.value = "Chat settings: provider profiles stay behind the bridge.";
+  panelBodySecondary.value = "Profiles can switch Codex, Claude Code, NIM, or local-compatible endpoints.";
   status.value = "Chat settings active";
 }
 
@@ -216,6 +230,8 @@ function dockProjectLeft() {
   activePanel.value = "Project";
   panelMode.value = "docked left";
   leftDockVisible.value = true;
+  panelBodyPrimary.value = "Project files: App.vue, WorkbenchEntry.vue, README.md.";
+  panelBodySecondary.value = "Open files into editor tabs; CodeMirror sidecar follows the active file.";
   status.value = "Project docked left";
 }
 
@@ -223,6 +239,8 @@ function dockChatRight() {
   activePanel.value = "Chat";
   panelMode.value = "docked right";
   rightDockVisible.value = true;
+  panelBodyPrimary.value = "Checkpoint chat: current implementation slice is active.";
+  panelBodySecondary.value = "Assistant tools can create checkpoints and mark work complete later.";
   status.value = "Chat docked right";
 }
 
@@ -313,6 +331,11 @@ function openTerminal() {
           <hawk-button id="panel-unpin" width="72" @pointerdown="unpinPanel">Unpin</hawk-button>
           <hawk-button id="panel-restore" width="72" @pointerdown="restorePanel">Float</hawk-button>
           <hawk-button id="drawer-open-terminal" width="132" @pointerdown="openTerminal">Terminal</hawk-button>
+          <hawk-text id="active-panel-primary" class="mono" width="340" height="42">{{ panelBodyPrimary }}</hawk-text>
+          <hawk-text id="active-panel-secondary" class="muted" width="340" height="42">{{ panelBodySecondary }}</hawk-text>
+          <hawk-button id="panel-open-app" width="72" @pointerdown="selectAppTab">App.vue</hawk-button>
+          <hawk-button id="panel-open-readme" width="92" @pointerdown="selectReadmeTab">README.md</hawk-button>
+          <hawk-button id="panel-open-manifest" width="92" @pointerdown="selectManifestTab">hawk.json</hawk-button>
         </hawk-view>
       </hawk-view>
     </hawk-view>
