@@ -252,15 +252,16 @@ function openTerminal() {
     </hawk-view>
 
     <hawk-view id="status-bar" class="status-bar" width="1280" height="24">
-      <hawk-text id="status-project" width="170">Project: hawk2ui-editor</hawk-text>
-      <hawk-text id="status-manifest" width="120">Manifest: valid</hawk-text>
-      <hawk-text id="status-lsp" width="130">LSP: ready</hawk-text>
-      <hawk-text id="status-terminal" width="150">Terminal: ready</hawk-text>
-      <hawk-text id="status-preview" width="140">Preview: {{ previewState }}</hawk-text>
-      <hawk-text id="status-cpu" class="mono" width="70">CPU: --</hawk-text>
-      <hawk-text id="status-mem" class="mono" width="70">MEM: --</hawk-text>
-      <hawk-text id="status-gpu" class="mono" width="90">GPU: pending</hawk-text>
-      <hawk-text id="status-current" width="300">Status: {{ status }}</hawk-text>
+      <hawk-text id="status-project" width="160">Project: hawk2ui-editor</hawk-text>
+      <hawk-text id="status-manifest" width="112">Manifest: valid</hawk-text>
+      <hawk-text id="status-bridge" width="120">Bridge: ready</hawk-text>
+      <hawk-text id="status-lsp" width="110">LSP: ready</hawk-text>
+      <hawk-text id="status-terminal" width="130">Terminal: ready</hawk-text>
+      <hawk-text id="status-preview" width="130">Preview: {{ previewState }}</hawk-text>
+      <hawk-text id="status-cpu" class="mono" width="64">CPU: --</hawk-text>
+      <hawk-text id="status-mem" class="mono" width="64">MEM: --</hawk-text>
+      <hawk-text id="status-gpu" class="mono" width="84">GPU: pending</hawk-text>
+      <hawk-text id="status-current" width="280">Status: {{ status }}</hawk-text>
     </hawk-view>
   </hawk-view>
 </template>

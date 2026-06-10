@@ -70,7 +70,19 @@ describe("interactive workbench entry", () => {
       expect(node?.events?.some((event) => event.kind === "pointer.press")).toBe(true);
     }
 
-    for (const id of ["status-cpu", "status-mem", "status-gpu"]) {
+    const statusIds = [
+      "status-project",
+      "status-manifest",
+      "status-bridge",
+      "status-preview",
+      "status-lsp",
+      "status-terminal",
+      "status-cpu",
+      "status-mem",
+      "status-gpu",
+    ];
+
+    for (const id of statusIds) {
       expect(nodes.find((candidate) => candidate.id === id)?.kind).toBe("text");
     }
   });
