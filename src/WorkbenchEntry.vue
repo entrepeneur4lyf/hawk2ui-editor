@@ -273,33 +273,21 @@ function openTerminal() {
         </hawk-button>
       </hawk-view>
 
-      <hawk-view id="editor-workspace" class="editor-workspace" width="852" :height="workspaceHeight">
-        <hawk-view id="editor-tabs" class="editor-tabs" width="852" height="34">
+      <hawk-view id="editor-workspace" class="editor-workspace" width="1280" :height="workspaceHeight">
+        <hawk-view id="editor-tabs" class="editor-tabs" width="1280" height="34">
           <hawk-button id="editor-tab-app" width="86" @pointerdown="selectAppTab">App.vue</hawk-button>
           <hawk-button id="editor-tab-readme" width="102" @pointerdown="selectReadmeTab">README.md</hawk-button>
           <hawk-button id="editor-tab-manifest" width="96" @pointerdown="selectManifestTab">hawk.json</hawk-button>
         </hawk-view>
-        <hawk-text id="editor-path" class="muted" width="852" height="28">{{ editorPath }} / {{ editorLanguage }}</hawk-text>
-        <hawk-text id="editor-line-1" class="code-line" width="852" height="28">{{ editorLine1 }}</hawk-text>
-        <hawk-text id="editor-line-2" class="code-line" width="852" height="28">{{ editorLine2 }}</hawk-text>
-        <hawk-text id="editor-line-3" class="code-line" width="852" height="28">{{ editorLine3 }}</hawk-text>
-        <hawk-view id="editor-actions" class="editor-actions" width="852" height="34">
+        <hawk-text id="editor-path" class="muted" width="1280" height="28">{{ editorPath }} / {{ editorLanguage }}</hawk-text>
+        <hawk-text id="editor-line-1" class="code-line" width="1280" height="28">{{ editorLine1 }}</hawk-text>
+        <hawk-text id="editor-line-2" class="code-line" width="1280" height="28">{{ editorLine2 }}</hawk-text>
+        <hawk-text id="editor-line-3" class="code-line" width="1280" height="28">{{ editorLine3 }}</hawk-text>
+        <hawk-view id="editor-actions" class="editor-actions" width="1280" height="34">
           <hawk-button id="editor-open-sidecar" width="132" @pointerdown="openEditorSidecar">Open Sidecar</hawk-button>
           <hawk-text id="editor-sidecar-state" class="muted" width="180">Sidecar: {{ sidecarState }}</hawk-text>
         </hawk-view>
-        <hawk-text id="editor-notice" class="muted" width="852" height="32">{{ editorNotice }}</hawk-text>
-      </hawk-view>
-
-      <hawk-view id="active-panel" class="panel" width="360" height="360">
-        <hawk-text id="active-panel-title" class="panel-title" width="360" height="30">{{ activePanel }}</hawk-text>
-        <hawk-text id="active-panel-mode" class="muted" width="360" height="28">Mode: {{ panelMode }}</hawk-text>
-        <hawk-button id="panel-minimize" width="72" @pointerdown="minimizePanel">Min</hawk-button>
-        <hawk-button id="panel-dock-left" width="72" @pointerdown="dockLeft">Dock L</hawk-button>
-        <hawk-button id="panel-dock-right" width="72" @pointerdown="dockRight">Dock R</hawk-button>
-        <hawk-button id="panel-pin" width="72" @pointerdown="pinPanel">Pin</hawk-button>
-        <hawk-button id="panel-unpin" width="72" @pointerdown="unpinPanel">Unpin</hawk-button>
-        <hawk-button id="panel-restore" width="72" @pointerdown="restorePanel">Float</hawk-button>
-        <hawk-button id="drawer-open-terminal" width="132" @pointerdown="openTerminal">Terminal</hawk-button>
+        <hawk-text id="editor-notice" class="muted" width="1280" height="32">{{ editorNotice }}</hawk-text>
       </hawk-view>
 
       <hawk-view
@@ -312,6 +300,20 @@ function openTerminal() {
         <hawk-button id="dock-right-chat" class="dock-icon" width="30" height="30" @pointerdown="dockChatRight">
           C
         </hawk-button>
+      </hawk-view>
+
+      <hawk-view id="panel-overlay-layer" class="panel-overlay-layer" width="1280" :height="workspaceHeight">
+        <hawk-view id="active-panel" class="panel floating-panel-overlay" width="360" height="360">
+          <hawk-text id="active-panel-title" class="panel-title" width="360" height="30">{{ activePanel }}</hawk-text>
+          <hawk-text id="active-panel-mode" class="muted" width="360" height="28">Mode: {{ panelMode }}</hawk-text>
+          <hawk-button id="panel-minimize" width="72" @pointerdown="minimizePanel">Min</hawk-button>
+          <hawk-button id="panel-dock-left" width="72" @pointerdown="dockLeft">Dock L</hawk-button>
+          <hawk-button id="panel-dock-right" width="72" @pointerdown="dockRight">Dock R</hawk-button>
+          <hawk-button id="panel-pin" width="72" @pointerdown="pinPanel">Pin</hawk-button>
+          <hawk-button id="panel-unpin" width="72" @pointerdown="unpinPanel">Unpin</hawk-button>
+          <hawk-button id="panel-restore" width="72" @pointerdown="restorePanel">Float</hawk-button>
+          <hawk-button id="drawer-open-terminal" width="132" @pointerdown="openTerminal">Terminal</hawk-button>
+        </hawk-view>
       </hawk-view>
     </hawk-view>
 

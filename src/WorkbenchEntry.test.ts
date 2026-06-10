@@ -139,6 +139,20 @@ describe("interactive workbench entry", () => {
     expect(sumChildWidths(topbar)).toBeLessThanOrEqual(numberProp(topbar, "width"));
   });
 
+  test("keeps the central workspace editor-only with panels in an overlay layer", () => {
+    const source = readFileSync(join(import.meta.dir, "WorkbenchEntry.vue"), "utf8");
+    const output = compileHawkVue({ filename: "src/WorkbenchEntry.vue", source });
+    const nodes = flattenNodes(output.compilerArtifact.root as CompiledNode);
+    const workspace = nodes.find((candidate) => candidate.id === "workspace");
+    const editor = nodes.find((candidate) => candidate.id === "editor-workspace");
+    const overlay = nodes.find((candidate) => candidate.id === "panel-overlay-layer");
+
+    expect(directChildIds(workspace)).not.toContain("active-panel");
+    expect(numberProp(editor, "width")).toBe(numberProp(workspace, "width"));
+    expect(overlay?.kind).toBe("view");
+    expect(directChildIds(overlay)).toContain("active-panel");
+  });
+
   test("binds drawer mode controls to explicit collapsed, compact, and expanded heights", () => {
     const source = readFileSync(join(import.meta.dir, "WorkbenchEntry.vue"), "utf8");
     const output = compileHawkVue({ filename: "src/WorkbenchEntry.vue", source });
@@ -180,7 +194,7 @@ describe("interactive workbench entry", () => {
     const output = compileHawkVue({ filename: "src/WorkbenchEntry.vue", source });
     const nodes = flattenNodes(output.compilerArtifact.root as CompiledNode);
 
-    for (const id of ["workspace", "status-bar"]) {
+    for (const id of ["status-bar"]) {
       const node = nodes.find((candidate) => candidate.id === id);
       expect(sumChildWidths(node)).toBeLessThanOrEqual(numberProp(node, "width"));
     }
@@ -200,6 +214,10 @@ describe("interactive workbench entry", () => {
 
 function flattenNodes(node: CompiledNode): CompiledNode[] {
   return [node, ...(node.children ?? []).flatMap((child) => flattenNodes(child.node))];
+}
+
+function directChildIds(node: CompiledNode | undefined): string[] {
+  return (node?.children ?? []).map((child) => child.node.id);
 }
 
 function numberProp(node: CompiledNode | undefined, name: string): number {
