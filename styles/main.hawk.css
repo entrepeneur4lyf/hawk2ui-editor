@@ -57,6 +57,10 @@
   border-width: 1px;
 }
 
+.theme-light .editor-tabs {
+  background-color: token(color.surface);
+}
+
 .editor-tab {
   border-radius: 4px;
 }
@@ -231,6 +235,26 @@
 .theme-light .editor-buffer {
   background-color: token(color.surface);
   color: #111820;
+}
+
+.theme-light .editor-meta {
+  background-color: token(color.surface);
+}
+
+.theme-light .drawer-toolbar {
+  background-color: token(color.surface);
+}
+
+.theme-light .drawer-body {
+  background-color: token(color.surface);
+}
+
+.theme-light .dock-gutter {
+  background-color: token(color.surface);
+}
+
+.theme-light .panel-header {
+  background-color: token(color.surface);
 }
 
 .theme-light .muted {
