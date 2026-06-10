@@ -33,6 +33,15 @@ describe("Hawk Vue native events", () => {
 
     expect(unsupported).toEqual([]);
   });
+
+  test("keeps floating panel chrome controls fixed size", () => {
+    const source = readFileSync(join(import.meta.dir, "HawkFloatingPanel.vue"), "utf8");
+    const fluidButtons = [...source.matchAll(/<hawk-button[\s\S]*?>/g)]
+      .map((match) => match[0])
+      .filter((tag) => !/[\s:]width=/.test(tag) || !/[\s:]height=/.test(tag));
+
+    expect(fluidButtons).toEqual([]);
+  });
 });
 
 function vueFiles(directory: string): string[] {
