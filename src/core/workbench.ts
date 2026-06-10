@@ -8,6 +8,21 @@ export type DrawerTab = "terminal" | "logs" | "debug" | "problems";
 export type DrawerMode = "collapsed" | "compact" | "expanded";
 export type StatusTone = "ok" | "warn" | "error" | "muted";
 export type PreviewStateName = "stopped" | "starting" | "running" | "failed";
+export type WorkbenchCommandGroupId = "project" | "run" | "panels";
+export type WorkbenchCommandId =
+  | "open-project"
+  | "new-file"
+  | "save"
+  | "validate"
+  | "build"
+  | "run-preview"
+  | "stop-preview"
+  | "command-palette"
+  | "toggle-project"
+  | "toggle-chat"
+  | "toggle-docs"
+  | "toggle-editor-settings"
+  | "toggle-chat-settings";
 
 export type EditorTab = EditorDocument;
 
@@ -21,6 +36,19 @@ export interface StatusItem {
   label: string;
   value: string;
   tone: StatusTone;
+}
+
+export interface WorkbenchCommand {
+  id: WorkbenchCommandId;
+  label: string;
+  width: number;
+  group: WorkbenchCommandGroupId;
+  panel?: WorkbenchPanelName;
+}
+
+export interface WorkbenchCommandGroup {
+  id: WorkbenchCommandGroupId;
+  commands: WorkbenchCommand[];
 }
 
 export interface WorkbenchState {
@@ -335,6 +363,39 @@ export function workbenchChromeMetrics(width: number): WorkbenchChromeMetrics {
     return { brandWidth: 160, commandWidth: 468, panelLauncherWidth: 300 };
   }
   return { brandWidth: Math.max(120, Math.min(160, viewportWidth)), commandWidth: 0, panelLauncherWidth: 0 };
+}
+
+export function workbenchCommandGroups(): WorkbenchCommandGroup[] {
+  return [
+    {
+      id: "project",
+      commands: [
+        { id: "open-project", label: "Open", width: 56, group: "project" },
+        { id: "new-file", label: "New", width: 50, group: "project" },
+        { id: "save", label: "Save", width: 56, group: "project" },
+      ],
+    },
+    {
+      id: "run",
+      commands: [
+        { id: "validate", label: "Validate", width: 78, group: "run" },
+        { id: "build", label: "Build", width: 58, group: "run" },
+        { id: "run-preview", label: "Run", width: 48, group: "run" },
+        { id: "stop-preview", label: "Stop", width: 50, group: "run" },
+        { id: "command-palette", label: "Palette", width: 72, group: "run" },
+      ],
+    },
+    {
+      id: "panels",
+      commands: [
+        { id: "toggle-project", label: "Project", width: 60, group: "panels", panel: "project" },
+        { id: "toggle-chat", label: "Chat", width: 44, group: "panels", panel: "assistant" },
+        { id: "toggle-docs", label: "Docs", width: 44, group: "panels", panel: "docs" },
+        { id: "toggle-editor-settings", label: "Editor", width: 54, group: "panels", panel: "editorSettings" },
+        { id: "toggle-chat-settings", label: "Chat Cfg", width: 88, group: "panels", panel: "chatSettings" },
+      ],
+    },
+  ];
 }
 
 export function setDrawerMode(drawer: DrawerState, mode: DrawerMode): DrawerState {

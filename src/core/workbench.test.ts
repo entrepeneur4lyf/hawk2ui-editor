@@ -17,6 +17,7 @@ import {
   togglePanel,
   undockPanel,
   unpinPanel,
+  workbenchCommandGroups,
   workbenchChromeMetrics,
   workbenchLayoutMetrics,
   type WorkbenchPanelName,
@@ -196,6 +197,37 @@ describe("workbench shell", () => {
 
     const compact = workbenchChromeMetrics(960);
     expect(compact.brandWidth + compact.commandWidth + compact.panelLauncherWidth).toBeLessThanOrEqual(960);
+  });
+
+  test("defines deterministic command bar groups within chrome budgets", () => {
+    const groups = workbenchCommandGroups();
+
+    expect(groups.map((group) => group.id)).toEqual(["project", "run", "panels"]);
+    expect(groups.flatMap((group) => group.commands.map((command) => command.id))).toEqual([
+      "open-project",
+      "new-file",
+      "save",
+      "validate",
+      "build",
+      "run-preview",
+      "stop-preview",
+      "command-palette",
+      "toggle-project",
+      "toggle-chat",
+      "toggle-docs",
+      "toggle-editor-settings",
+      "toggle-chat-settings",
+    ]);
+
+    const chrome = workbenchChromeMetrics(960);
+    const actionWidth = groups
+      .filter((group) => group.id !== "panels")
+      .flatMap((group) => group.commands)
+      .reduce((total, command) => total + command.width, 0);
+    const panelWidth = groups.find((group) => group.id === "panels")?.commands.reduce((total, command) => total + command.width, 0) ?? 0;
+
+    expect(actionWidth).toBeLessThanOrEqual(chrome.commandWidth);
+    expect(panelWidth).toBeLessThanOrEqual(chrome.panelLauncherWidth);
   });
 
   test("collapses low-priority status signals at narrow widths", () => {

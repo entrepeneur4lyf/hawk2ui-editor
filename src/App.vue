@@ -35,11 +35,13 @@ import {
   togglePanel,
   undockPanel,
   unpinPanel,
+  workbenchCommandGroups,
   workbenchChromeMetrics,
   workbenchLayoutMetrics,
   type DockEdge,
   type DrawerMode,
   type DrawerTab,
+  type WorkbenchCommand,
   type WorkbenchPanelName,
 } from "./core/workbench";
 import { resolveWorkbenchTheme, themeClassName, type ThemePreference } from "./theme/workbenchTheme";
@@ -154,6 +156,9 @@ const layout = computed(() => workbenchLayoutMetrics(surfaceSize.value, workbenc
 const chrome = computed(() => workbenchChromeMetrics(layout.value.width));
 const resolvedTheme = computed(() => resolveWorkbenchTheme(workspace.value.editor.theme));
 const rootClass = computed(() => `editor-root ${themeClassName(workspace.value.editor.theme)}`);
+const commandGroups = workbenchCommandGroups();
+const actionCommands = commandGroups.filter((group) => group.id !== "panels").flatMap((group) => group.commands);
+const panelCommands = commandGroups.find((group) => group.id === "panels")?.commands ?? [];
 const leftDockItems = computed(() => dockItems("left"));
 const rightDockItems = computed(() => dockItems("right"));
 const activeDockPanelId = computed(() => {
@@ -210,6 +215,57 @@ function panel(name: WorkbenchPanelName): PanelState {
 
 function toggleWorkbenchPanel(name: WorkbenchPanelName) {
   setWorkbenchPanels(togglePanel(workbench.value.panels, name));
+}
+
+function runWorkbenchCommand(command: WorkbenchCommand) {
+  if (command.panel) {
+    toggleWorkbenchPanel(command.panel);
+    return;
+  }
+
+  if (command.id === "open-project") {
+    setWorkbenchPanels(openPanel(workbench.value.panels, "project"));
+    return;
+  }
+
+  if (command.id === "new-file") {
+    appendLog("new file command queued");
+    return;
+  }
+
+  if (command.id === "save") {
+    void saveEditorTab(activeTab.value.id);
+    return;
+  }
+
+  if (command.id === "validate") {
+    selectDrawer("problems");
+    void refreshLspStatus();
+    return;
+  }
+
+  if (command.id === "build") {
+    selectDrawer("logs");
+    appendLog("build command queued");
+    return;
+  }
+
+  if (command.id === "run-preview") {
+    preview.value.state = "starting";
+    selectDrawer("debug");
+    return;
+  }
+
+  if (command.id === "stop-preview") {
+    preview.value.state = "stopped";
+    selectDrawer("debug");
+    return;
+  }
+
+  if (command.id === "command-palette") {
+    selectDrawer("logs");
+    appendLog("command palette requested");
+  }
 }
 
 function minimizeWorkbenchPanel(name: WorkbenchPanelName, edge: DockEdge = "left") {
@@ -577,14 +633,15 @@ function severityLabel(severity: number | undefined): string {
         :width="chrome.commandWidth"
         :height="layout.topBarHeight"
       >
-        <hawk-button id="command-open" :width="56">Open</hawk-button>
-        <hawk-button id="command-new-file" :width="50">New</hawk-button>
-        <hawk-button id="command-save" :width="56" @pointerdown="saveEditorTab(activeTab.id)">Save</hawk-button>
-        <hawk-button id="command-validate" :width="78" @pointerdown="selectDrawer('problems')">Validate</hawk-button>
-        <hawk-button id="command-build" :width="58" @pointerdown="selectDrawer('logs')">Build</hawk-button>
-        <hawk-button id="command-run" :width="48" @pointerdown="preview.state = 'starting'">Run</hawk-button>
-        <hawk-button id="command-stop" :width="50" @pointerdown="preview.state = 'stopped'">Stop</hawk-button>
-        <hawk-button id="command-palette" :width="72" @pointerdown="selectDrawer('logs')">Palette</hawk-button>
+        <hawk-button
+          v-for="command in actionCommands"
+          :id="`command-${command.id}`"
+          :key="command.id"
+          :width="command.width"
+          @pointerdown="runWorkbenchCommand(command)"
+        >
+          {{ command.label }}
+        </hawk-button>
       </hawk-view>
 
       <hawk-view
@@ -594,14 +651,14 @@ function severityLabel(severity: number | undefined): string {
         :width="chrome.panelLauncherWidth"
         :height="layout.topBarHeight"
       >
-        <hawk-button id="toggle-project" :width="60" @pointerdown="toggleWorkbenchPanel('project')">Project</hawk-button>
-        <hawk-button id="toggle-chat" :width="44" @pointerdown="toggleWorkbenchPanel('assistant')">Chat</hawk-button>
-        <hawk-button id="toggle-docs" :width="44" @pointerdown="toggleWorkbenchPanel('docs')">Docs</hawk-button>
-        <hawk-button id="toggle-editor-settings" :width="54" @pointerdown="toggleWorkbenchPanel('editorSettings')">
-          Editor
-        </hawk-button>
-        <hawk-button id="toggle-chat-settings" :width="88" @pointerdown="toggleWorkbenchPanel('chatSettings')">
-          Chat Cfg
+        <hawk-button
+          v-for="command in panelCommands"
+          :id="command.id"
+          :key="command.id"
+          :width="command.width"
+          @pointerdown="runWorkbenchCommand(command)"
+        >
+          {{ command.label }}
         </hawk-button>
       </hawk-view>
     </hawk-view>
