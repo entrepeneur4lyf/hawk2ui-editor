@@ -5,8 +5,22 @@ import { readProjectFile, resolveProjectPath } from "./files";
 export interface EditorSidecarState {
   state: "closed" | "opening" | "open" | "failed";
   filePath: string | null;
+  relativePath: string | null;
+  dirty: boolean;
+  line: number;
+  column: number;
+  lastSavedAt: string | null;
+  lastError: string | null;
   message: string;
 }
+
+export type EditorSidecarMessage =
+  | { type: "editorReady"; path: string; line?: number; column?: number }
+  | { type: "documentChanged"; path: string; dirty: boolean }
+  | { type: "selectionChanged"; path: string; line: number; column: number }
+  | { type: "saveRequested"; path: string }
+  | { type: "documentSaved"; path: string; savedAt?: string }
+  | { type: "editorError"; path?: string; message: string };
 
 interface EditorSidecarPayload {
   projectRoot: string;
@@ -16,11 +30,9 @@ interface EditorSidecarPayload {
   scriptPath: string;
 }
 
-let state: EditorSidecarState = {
-  state: "closed",
-  filePath: null,
-  message: "Editor sidecar is closed.",
-};
+const editorEventPrefix = "HAWK_EDITOR_EVENT ";
+
+let state: EditorSidecarState = closedEditorSidecarState();
 
 let activeProcess: ReturnType<typeof Bun.spawn> | null = null;
 
@@ -33,7 +45,67 @@ export function currentEditorSidecarState(): EditorSidecarState {
 export function closeEditorSidecar(): EditorSidecarState {
   activeProcess?.kill();
   activeProcess = null;
-  state = { state: "closed", filePath: null, message: "Editor sidecar is closed." };
+  state = closedEditorSidecarState();
+  return currentEditorSidecarState();
+}
+
+export function handleEditorSidecarMessage(message: EditorSidecarMessage): EditorSidecarState {
+  const relativePath = message.path ?? state.relativePath;
+
+  if (message.type === "editorReady") {
+    state = {
+      ...state,
+      state: "open",
+      relativePath,
+      dirty: false,
+      line: positiveInteger(message.line, 1),
+      column: positiveInteger(message.column, 1),
+      lastError: null,
+      message: `Editor sidecar is ready: ${relativePath}`,
+    };
+  } else if (message.type === "documentChanged") {
+    state = {
+      ...state,
+      state: state.state === "closed" ? "open" : state.state,
+      relativePath,
+      dirty: message.dirty,
+      message: message.dirty ? `Unsaved changes in ${relativePath}.` : `No unsaved changes in ${relativePath}.`,
+    };
+  } else if (message.type === "selectionChanged") {
+    state = {
+      ...state,
+      state: state.state === "closed" ? "open" : state.state,
+      relativePath,
+      line: positiveInteger(message.line, state.line),
+      column: positiveInteger(message.column, state.column),
+    };
+  } else if (message.type === "saveRequested") {
+    state = {
+      ...state,
+      state: state.state === "closed" ? "open" : state.state,
+      relativePath,
+      message: `Saving ${relativePath}.`,
+    };
+  } else if (message.type === "documentSaved") {
+    state = {
+      ...state,
+      state: state.state === "closed" ? "open" : state.state,
+      relativePath,
+      dirty: false,
+      lastSavedAt: message.savedAt ?? new Date().toISOString(),
+      lastError: null,
+      message: `Saved ${relativePath}.`,
+    };
+  } else {
+    state = {
+      ...state,
+      state: state.state === "closed" ? "failed" : state.state,
+      relativePath,
+      lastError: message.message,
+      message: message.message,
+    };
+  }
+
   return currentEditorSidecarState();
 }
 
@@ -42,34 +114,34 @@ export async function openEditorSidecar(projectRoot: string, relativePath: strin
   try {
     resolved = resolveProjectPath(projectRoot, relativePath);
   } catch (error) {
-    state = {
-      state: "failed",
-      filePath: null,
-      message: error instanceof Error ? error.message : "Invalid editor sidecar path.",
-    };
+    const message = error instanceof Error ? error.message : "Invalid editor sidecar path.";
+    state = failedEditorSidecarState(null, null, message);
     return currentEditorSidecarState();
   }
 
   if (process.env.HAWK2UI_EDITOR_WEBVIEW_SIDECAR !== "1") {
-    state = {
-      state: "failed",
-      filePath: resolved,
-      message: "Editor sidecar is disabled. Set HAWK2UI_EDITOR_WEBVIEW_SIDECAR=1 to enable the WebviewJS example.",
-    };
+    const message = "Editor sidecar is disabled. Set HAWK2UI_EDITOR_WEBVIEW_SIDECAR=1 to enable the WebviewJS example.";
+    state = failedEditorSidecarState(resolved, relativePath, message);
     return currentEditorSidecarState();
   }
 
   if (!existsSync(resolved)) {
-    state = { state: "failed", filePath: resolved, message: `File does not exist: ${resolved}` };
+    state = failedEditorSidecarState(resolved, relativePath, `File does not exist: ${resolved}`);
     return currentEditorSidecarState();
   }
 
   if (!statSync(resolved).isFile()) {
-    state = { state: "failed", filePath: resolved, message: `Path is not a file: ${resolved}` };
+    state = failedEditorSidecarState(resolved, relativePath, `Path is not a file: ${resolved}`);
     return currentEditorSidecarState();
   }
 
-  state = { state: "opening", filePath: resolved, message: "Opening WebviewJS editor sidecar." };
+  state = {
+    ...defaultEditorSidecarState(),
+    state: "opening",
+    filePath: resolved,
+    relativePath,
+    message: "Opening WebviewJS editor sidecar.",
+  };
 
   try {
     await verifyWebviewBinding();
@@ -90,22 +162,37 @@ export async function openEditorSidecar(projectRoot: string, relativePath: strin
       stderr: "pipe",
       env: process.env,
     });
+    consumeEditorProcessOutput(activeProcess.stdout);
+    drainEditorProcessOutput(activeProcess.stderr);
 
     activeProcess.exited.then((code) => {
       if (state.filePath === resolved && code !== 0) {
-        state = { state: "failed", filePath: resolved, message: `Editor sidecar exited with code ${code}.` };
+        state = {
+          ...state,
+          state: "failed",
+          filePath: resolved,
+          relativePath,
+          lastError: `Editor sidecar exited with code ${code}.`,
+          message: `Editor sidecar exited with code ${code}.`,
+        };
       } else if (state.filePath === resolved) {
-        state = { state: "closed", filePath: null, message: "Editor sidecar is closed." };
+        state = closedEditorSidecarState();
       }
     });
 
-    state = { state: "open", filePath: resolved, message: "Editor sidecar is open." };
-  } catch (error) {
     state = {
-      state: "failed",
+      ...defaultEditorSidecarState(),
+      state: "open",
       filePath: resolved,
-      message: error instanceof Error ? error.message : "Failed to open editor sidecar.",
+      relativePath,
+      message: "Editor sidecar is open.",
     };
+  } catch (error) {
+    state = failedEditorSidecarState(
+      resolved,
+      relativePath,
+      error instanceof Error ? error.message : "Failed to open editor sidecar.",
+    );
   }
 
   return currentEditorSidecarState();
@@ -151,4 +238,140 @@ function writeEditorPayload(payload: EditorSidecarPayload): string {
   mkdirSync(dirname(payloadPath), { recursive: true });
   writeFileSync(payloadPath, `${JSON.stringify(payload)}\n`);
   return payloadPath;
+}
+
+function defaultEditorSidecarState(): Omit<EditorSidecarState, "state" | "filePath" | "relativePath" | "message"> {
+  return {
+    dirty: false,
+    line: 1,
+    column: 1,
+    lastSavedAt: null,
+    lastError: null,
+  };
+}
+
+function closedEditorSidecarState(): EditorSidecarState {
+  return {
+    ...defaultEditorSidecarState(),
+    state: "closed",
+    filePath: null,
+    relativePath: null,
+    message: "Editor sidecar is closed.",
+  };
+}
+
+function failedEditorSidecarState(filePath: string | null, relativePath: string | null, message: string): EditorSidecarState {
+  return {
+    ...defaultEditorSidecarState(),
+    state: "failed",
+    filePath,
+    relativePath,
+    lastError: message,
+    message,
+  };
+}
+
+function consumeEditorProcessOutput(stream: ReadableStream<Uint8Array> | null | undefined): void {
+  if (!stream) return;
+
+  void (async () => {
+    const reader = stream.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+
+    while (true) {
+      const chunk = await reader.read();
+      if (chunk.done) break;
+      buffer += decoder.decode(chunk.value, { stream: true });
+      const lines = buffer.split(/\r?\n/);
+      buffer = lines.pop() ?? "";
+      for (const line of lines) {
+        handleEditorProcessLine(line);
+      }
+    }
+
+    buffer += decoder.decode();
+    if (buffer) handleEditorProcessLine(buffer);
+  })().catch((error) => {
+    handleEditorSidecarMessage({
+      type: "editorError",
+      message: error instanceof Error ? error.message : "Failed to read editor sidecar output.",
+    });
+  });
+}
+
+function drainEditorProcessOutput(stream: ReadableStream<Uint8Array> | null | undefined): void {
+  if (!stream) return;
+  void stream.pipeTo(new WritableStream({ write() {} })).catch(() => {});
+}
+
+function handleEditorProcessLine(line: string): void {
+  if (!line.startsWith(editorEventPrefix)) return;
+
+  try {
+    const message = parseEditorSidecarMessage(JSON.parse(line.slice(editorEventPrefix.length)));
+    if (message) handleEditorSidecarMessage(message);
+  } catch (error) {
+    handleEditorSidecarMessage({
+      type: "editorError",
+      message: error instanceof Error ? error.message : "Invalid editor sidecar event.",
+    });
+  }
+}
+
+function parseEditorSidecarMessage(value: unknown): EditorSidecarMessage | null {
+  if (!isRecord(value) || typeof value.type !== "string") return null;
+
+  if (value.type === "editorReady" && typeof value.path === "string") {
+    return {
+      type: "editorReady",
+      path: value.path,
+      line: typeof value.line === "number" ? value.line : undefined,
+      column: typeof value.column === "number" ? value.column : undefined,
+    };
+  }
+
+  if (value.type === "documentChanged" && typeof value.path === "string" && typeof value.dirty === "boolean") {
+    return { type: "documentChanged", path: value.path, dirty: value.dirty };
+  }
+
+  if (
+    value.type === "selectionChanged" &&
+    typeof value.path === "string" &&
+    typeof value.line === "number" &&
+    typeof value.column === "number"
+  ) {
+    return { type: "selectionChanged", path: value.path, line: value.line, column: value.column };
+  }
+
+  if (value.type === "saveRequested" && typeof value.path === "string") {
+    return { type: "saveRequested", path: value.path };
+  }
+
+  if (value.type === "documentSaved" && typeof value.path === "string") {
+    return {
+      type: "documentSaved",
+      path: value.path,
+      savedAt: typeof value.savedAt === "string" ? value.savedAt : undefined,
+    };
+  }
+
+  if (value.type === "editorError" && typeof value.message === "string") {
+    return {
+      type: "editorError",
+      path: typeof value.path === "string" ? value.path : undefined,
+      message: value.message,
+    };
+  }
+
+  return null;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function positiveInteger(value: number | undefined, fallback: number): number {
+  if (!Number.isFinite(value)) return fallback;
+  return Math.max(1, Math.floor(value));
 }

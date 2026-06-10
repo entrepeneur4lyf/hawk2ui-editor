@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import AssistantPanel from "./ui/AssistantPanel.vue";
 import BottomDrawer from "./ui/BottomDrawer.vue";
 import DocsPanel from "./ui/DocsPanel.vue";
@@ -30,6 +30,18 @@ import {
 } from "./core/workbench";
 import type { PreviewStatus } from "./preview/previewClient";
 import type { ProjectTreeEntry } from "./bridge/files";
+
+interface EditorSidecarStatus {
+  state: "closed" | "opening" | "open" | "failed";
+  filePath: string | null;
+  relativePath: string | null;
+  dirty: boolean;
+  line: number;
+  column: number;
+  lastSavedAt: string | null;
+  lastError: string | null;
+  message: string;
+}
 
 const workspace = ref(defaultWorkspaceDocument("/home/shawn/workspace/hawk2ui-editor"));
 const workbench = ref(createWorkbenchState(workspace.value.project.root));
@@ -64,10 +76,19 @@ const preview = ref<PreviewStatus>({
 const profile = computed(() => activeProfile(workspace.value));
 const activeTab = computed(() => activeDocument(documents.value));
 const statusItems = computed(() => statusItemsWithPreview(workbench.value.statusItems, preview.value.state));
+const sidecar = ref<EditorSidecarStatus | null>(null);
+const sidecarAvailable = computed(() => sidecar.value?.state === "open");
+let editorStatusTimer: ReturnType<typeof setInterval> | null = null;
 
 onMounted(() => {
   void refreshProjectTree();
   void openProjectFile("src/App.vue");
+  void refreshEditorStatus();
+  editorStatusTimer = setInterval(() => void refreshEditorStatus(), 1500);
+});
+
+onBeforeUnmount(() => {
+  if (editorStatusTimer) clearInterval(editorStatusTimer);
 });
 
 function closePanel(name: WorkbenchPanelName) {
@@ -116,12 +137,13 @@ async function saveEditorTab(id: string) {
 async function requestSidecar(path: string) {
   setStatusItem("sidecar", "opening", "warn");
   try {
-    const state = await bridgeJson<{ state: string; message: string }>("/editor/open", {
+    const state = await bridgeJson<EditorSidecarStatus>("/editor/open", {
       method: "POST",
       body: JSON.stringify({ root: workspace.value.project.root, path }),
     });
-    setStatusItem("sidecar", state.state, state.state === "open" ? "ok" : state.state === "failed" ? "error" : "warn");
+    applySidecarStatus(state);
     appendLog(state.message);
+    setTimeout(() => void refreshEditorStatus(), 500);
   } catch (error) {
     setStatusItem("sidecar", "failed", "error");
     appendLog(error instanceof Error ? error.message : `sidecar failed: ${path}`);
@@ -146,6 +168,14 @@ async function refreshProjectTree() {
   } catch (error) {
     setStatusItem("bridge", "disconnected", "warn");
     appendLog(error instanceof Error ? error.message : "project tree unavailable");
+  }
+}
+
+async function refreshEditorStatus() {
+  try {
+    applySidecarStatus(await bridgeJson<EditorSidecarStatus>("/editor/status"));
+  } catch {
+    setStatusItem("sidecar", "unknown", "warn");
   }
 }
 
@@ -196,6 +226,23 @@ function setStatusItem(id: string, value: string, tone: "ok" | "warn" | "error" 
     return item.id === id ? { ...item, value, tone } : item;
   });
 }
+
+function applySidecarStatus(status: EditorSidecarStatus) {
+  sidecar.value = status;
+  setStatusItem("sidecar", sidecarStatusValue(status), sidecarStatusTone(status));
+}
+
+function sidecarStatusValue(status: EditorSidecarStatus): string {
+  if (status.state === "open") return `${status.dirty ? "dirty" : "open"} ${status.line}:${status.column}`;
+  return status.state;
+}
+
+function sidecarStatusTone(status: EditorSidecarStatus): "ok" | "warn" | "error" | "muted" {
+  if (status.state === "failed" || status.lastError) return "error";
+  if (status.state === "opening" || status.dirty) return "warn";
+  if (status.state === "open") return "ok";
+  return "muted";
+}
 </script>
 
 <template>
@@ -233,7 +280,7 @@ function setStatusItem(id: string, value: string, tone: "ok" | "warn" | "error" 
       <EditorWorkspace
         :tabs="documents.documents"
         :active-tab-id="documents.activeDocumentId ?? ''"
-        :sidecar-available="false"
+        :sidecar-available="sidecarAvailable"
         @select="setActiveEditorTab"
         @save="saveEditorTab"
         @open-sidecar="requestSidecar"

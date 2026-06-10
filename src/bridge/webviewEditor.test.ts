@@ -2,7 +2,13 @@ import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { closeEditorSidecar, currentEditorSidecarState, openEditorSidecar, webviewPackageName } from "./webviewEditor";
+import {
+  closeEditorSidecar,
+  currentEditorSidecarState,
+  handleEditorSidecarMessage,
+  openEditorSidecar,
+  webviewPackageName,
+} from "./webviewEditor";
 
 let directory = "";
 
@@ -25,6 +31,12 @@ describe("webview editor sidecar", () => {
     expect(currentEditorSidecarState()).toEqual({
       state: "closed",
       filePath: null,
+      relativePath: null,
+      dirty: false,
+      line: 1,
+      column: 1,
+      lastSavedAt: null,
+      lastError: null,
       message: "Editor sidecar is closed.",
     });
   });
@@ -38,6 +50,12 @@ describe("webview editor sidecar", () => {
     expect(await openEditorSidecar(directory, "sample.ts")).toEqual({
       state: "failed",
       filePath,
+      relativePath: "sample.ts",
+      dirty: false,
+      line: 1,
+      column: 1,
+      lastSavedAt: null,
+      lastError: "Editor sidecar is disabled. Set HAWK2UI_EDITOR_WEBVIEW_SIDECAR=1 to enable the WebviewJS example.",
       message: "Editor sidecar is disabled. Set HAWK2UI_EDITOR_WEBVIEW_SIDECAR=1 to enable the WebviewJS example.",
     });
   });
@@ -46,6 +64,12 @@ describe("webview editor sidecar", () => {
     expect(await openEditorSidecar(directory, "../secret.ts")).toEqual({
       state: "failed",
       filePath: null,
+      relativePath: null,
+      dirty: false,
+      line: 1,
+      column: 1,
+      lastSavedAt: null,
+      lastError: "project path escapes root: ../secret.ts",
       message: "project path escapes root: ../secret.ts",
     });
   });
@@ -54,7 +78,33 @@ describe("webview editor sidecar", () => {
     expect(closeEditorSidecar()).toEqual({
       state: "closed",
       filePath: null,
+      relativePath: null,
+      dirty: false,
+      line: 1,
+      column: 1,
+      lastSavedAt: null,
+      lastError: null,
       message: "Editor sidecar is closed.",
     });
+  });
+
+  test("tracks lifecycle messages from the editor sidecar", () => {
+    handleEditorSidecarMessage({ type: "editorReady", path: "src/App.vue", line: 1, column: 1 });
+    handleEditorSidecarMessage({ type: "documentChanged", path: "src/App.vue", dirty: true });
+    handleEditorSidecarMessage({ type: "selectionChanged", path: "src/App.vue", line: 12, column: 8 });
+    handleEditorSidecarMessage({ type: "saveRequested", path: "src/App.vue" });
+    handleEditorSidecarMessage({ type: "documentSaved", path: "src/App.vue", savedAt: "2026-06-10T10:00:00.000Z" });
+
+    expect(currentEditorSidecarState()).toMatchObject({
+      relativePath: "src/App.vue",
+      dirty: false,
+      line: 12,
+      column: 8,
+      lastSavedAt: "2026-06-10T10:00:00.000Z",
+      lastError: null,
+    });
+
+    handleEditorSidecarMessage({ type: "editorError", path: "src/App.vue", message: "save failed" });
+    expect(currentEditorSidecarState().lastError).toBe("save failed");
   });
 });

@@ -11,6 +11,7 @@ import {
 } from "@codemirror/view";
 
 interface InitialEditorState {
+  path: string;
   filePath: string;
   text: string;
 }
@@ -18,16 +19,18 @@ interface InitialEditorState {
 declare global {
   interface Window {
     __HAWK_EDITOR_INITIAL__?: InitialEditorState;
-    __hawkEditorSaved?: () => void;
+    __hawkEditorSaved?: (savedAt?: string) => void;
+    __hawkEditorError?: (message: string) => void;
     ipc?: { postMessage(message: string): void };
   }
 }
 
-const initial = window.__HAWK_EDITOR_INITIAL__ ?? { filePath: "untitled", text: "" };
+const initial = window.__HAWK_EDITOR_INITIAL__ ?? { path: "untitled", filePath: "untitled", text: "" };
 const editorRoot = document.getElementById("editor");
 const status = document.getElementById("status");
 const fileName = document.getElementById("file-name");
 let dirty = false;
+let lastPosition = "1:1";
 
 if (!editorRoot) {
   throw new Error("missing editor root");
@@ -53,6 +56,11 @@ const view = new EditorView({
         if (update.docChanged) {
           dirty = true;
           updateStatus("Dirty");
+          post({ type: "documentChanged", path: initial.path, dirty });
+        }
+
+        if (update.selectionSet || update.docChanged) {
+          postSelection(update.state);
         }
       }),
     ],
@@ -70,11 +78,17 @@ window.addEventListener("keydown", (event) => {
 window.__hawkEditorSaved = () => {
   dirty = false;
   updateStatus("Saved");
+  post({ type: "documentChanged", path: initial.path, dirty });
 };
 
-post({ type: "editorReady", filePath: initial.filePath });
+window.__hawkEditorError = (message: string) => {
+  updateStatus(message);
+};
+
+post({ type: "editorReady", path: initial.path, filePath: initial.filePath, line: 1, column: 1 });
 
 function save(): void {
+  updateStatus("Saving");
   window.ipc?.postMessage(JSON.stringify({ type: "save", text: view.state.doc.toString() }));
 }
 
@@ -86,4 +100,15 @@ function updateStatus(value: string): void {
 
 function post(message: Record<string, unknown>): void {
   window.ipc?.postMessage(JSON.stringify(message));
+}
+
+function postSelection(state: EditorState): void {
+  const head = state.selection.main.head;
+  const line = state.doc.lineAt(head);
+  const column = head - line.from + 1;
+  const position = `${line.number}:${column}`;
+  if (position === lastPosition) return;
+
+  lastPosition = position;
+  post({ type: "selectionChanged", path: initial.path, line: line.number, column });
 }

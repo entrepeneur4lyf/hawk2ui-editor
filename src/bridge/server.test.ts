@@ -60,6 +60,12 @@ describe("bridge editor sidecar routes", () => {
     await expect(response.json()).resolves.toEqual({
       state: "closed",
       filePath: null,
+      relativePath: null,
+      dirty: false,
+      line: 1,
+      column: 1,
+      lastSavedAt: null,
+      lastError: null,
       message: "Editor sidecar is closed.",
     });
   });
