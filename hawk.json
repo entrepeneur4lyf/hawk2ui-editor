@@ -8,13 +8,12 @@
     "bundleId": "com.hawk2ui.editor"
   },
   "app": {
-    "entry": "src/main.ts",
-    "framework": "native",
+    "entry": "src/WorkbenchEntry.vue",
+    "framework": "vue",
     "style": "styles/main.hawk.css"
   },
   "build": {
-    "packageManager": "bun",
-    "output": "dist/main.js"
+    "packageManager": "bun"
   },
   "targets": {
     "desktop": [

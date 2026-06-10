@@ -7,7 +7,7 @@ export default defineConfig({
     emptyOutDir: true,
     sourcemap: true,
     lib: {
-      entry: "src/main.ts",
+      entry: "src/WorkbenchEntry.vue",
       formats: ["es"],
       fileName: () => "main.js",
     },

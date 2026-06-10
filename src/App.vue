@@ -124,7 +124,7 @@ const projectTree = ref<ProjectTreeEntry[]>([
     type: "directory",
     children: [
       { name: "App.vue", path: "src/App.vue", type: "file" },
-      { name: "main.ts", path: "src/main.ts", type: "file" },
+      { name: "WorkbenchEntry.vue", path: "src/WorkbenchEntry.vue", type: "file" },
     ],
   },
   { name: "README.md", path: "README.md", type: "file" },
@@ -133,7 +133,7 @@ const project = summarizeHawkManifest(
   workspace.value.project.root,
   JSON.stringify({
     package: { id: "com.hawk2ui.editor", name: "Hawk2UI Editor", version: "0.1.0" },
-    app: { entry: "src/main.ts", framework: "native" },
+    app: { entry: "src/WorkbenchEntry.vue", framework: "vue" },
     targets: { desktop: [{ name: "main" }] },
   }),
 );

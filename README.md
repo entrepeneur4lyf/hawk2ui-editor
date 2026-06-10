@@ -1,6 +1,6 @@
 # Hawk2UI Editor
 
-Local dogfood app for building a Hawk2UI single-project editor. The desktop runtime mounts a native workbench shell, while DOM-heavy editor features live in optional webview sidecars.
+Local dogfood app for building a Hawk2UI single-project editor. The desktop runtime mounts an interactive Hawk Vue workbench shell, while DOM-heavy editor features live in optional webview sidecars.
 
 ## Commands
 
@@ -15,7 +15,7 @@ Local dogfood app for building a Hawk2UI single-project editor. The desktop runt
 
 ## Code editor sidecar
 
-The code editor window is an example-only webview sidecar. Hawk2UI renders the native workbench shell; `@hawk2ui/editor-webview` hosts DOM-heavy editor widgets such as CodeMirror. This app uses the sidecar to demonstrate interop for developers who need a webview, but the sidecar package remains an optional editor-app dependency rather than core Hawk2UI framework functionality.
+The code editor window is an example-only webview sidecar. Hawk2UI renders the interactive workbench shell; `@hawk2ui/editor-webview` hosts DOM-heavy editor widgets such as CodeMirror. This app uses the sidecar to demonstrate interop for developers who need a webview, but the sidecar package remains an optional editor-app dependency rather than core Hawk2UI framework functionality.
 
 Enable the sidecar explicitly when testing it:
 

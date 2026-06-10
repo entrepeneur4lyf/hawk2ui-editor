@@ -25,12 +25,12 @@ describe("project summary", () => {
     });
   });
 
-  test("summarizes this editor's native manifest", () => {
+  test("summarizes this editor's interactive Vue manifest", () => {
     const manifest = readFileSync(join(import.meta.dir, "..", "..", "hawk.json"), "utf8");
     const summary = summarizeHawkManifest("/home/shawn/workspace/hawk2ui-editor", manifest);
 
-    expect(summary.framework).toBe("native");
-    expect(summary.entry).toBe("src/main.ts");
+    expect(summary.framework).toBe("vue");
+    expect(summary.entry).toBe("src/WorkbenchEntry.vue");
     expect(summary.targets).toEqual(["desktop"]);
   });
 
