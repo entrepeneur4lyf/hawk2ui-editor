@@ -4,6 +4,8 @@ import { ref } from "vue";
 const status = ref("Ready");
 const drawerTab = ref("Logs");
 const drawerMode = ref("compact");
+const drawerHeight = ref(150);
+const workspaceHeight = ref(604);
 const drawerBody = ref("Bridge idle. Use Validate, Build, Run, or Terminal.");
 const activePanel = ref("Project");
 const panelMode = ref("floating");
@@ -118,16 +120,22 @@ function restorePanel() {
 
 function collapseDrawer() {
   drawerMode.value = "collapsed";
+  drawerHeight.value = 36;
+  workspaceHeight.value = 718;
   status.value = "Drawer collapsed";
 }
 
 function compactDrawer() {
   drawerMode.value = "compact";
+  drawerHeight.value = 150;
+  workspaceHeight.value = 604;
   status.value = "Drawer compact";
 }
 
 function expandDrawer() {
   drawerMode.value = "expanded";
+  drawerHeight.value = 260;
+  workspaceHeight.value = 494;
   status.value = "Drawer expanded";
 }
 
@@ -177,14 +185,14 @@ function openTerminal() {
       </hawk-view>
     </hawk-view>
 
-    <hawk-view id="workspace" class="workspace" width="1280" height="574">
-      <hawk-view id="dock-gutter-left" class="dock-gutter dock-gutter-left" width="34" height="574">
+    <hawk-view id="workspace" class="workspace" width="1280" :height="workspaceHeight">
+      <hawk-view id="dock-gutter-left" class="dock-gutter dock-gutter-left" width="34" :height="workspaceHeight">
         <hawk-button id="dock-left-project" class="dock-icon" width="30" height="30" @pointerdown="dockProjectLeft">
           P
         </hawk-button>
       </hawk-view>
 
-      <hawk-view id="editor-workspace" class="editor-workspace" width="852" height="574">
+      <hawk-view id="editor-workspace" class="editor-workspace" width="852" :height="workspaceHeight">
         <hawk-text id="editor-tabs" class="mono" width="852" height="34">App.vue    README.md    hawk.json</hawk-text>
         <hawk-text id="editor-path" class="muted" width="852" height="28">src/App.vue / interactive Hawk entry</hawk-text>
         <hawk-text id="editor-line-1" class="code-line" width="852" height="28">1  &lt;script setup lang="ts"&gt;</hawk-text>
@@ -205,14 +213,14 @@ function openTerminal() {
         <hawk-button id="drawer-open-terminal" width="132" @pointerdown="openTerminal">Terminal</hawk-button>
       </hawk-view>
 
-      <hawk-view id="dock-gutter-right" class="dock-gutter dock-gutter-right" width="34" height="574">
+      <hawk-view id="dock-gutter-right" class="dock-gutter dock-gutter-right" width="34" :height="workspaceHeight">
         <hawk-button id="dock-right-chat" class="dock-icon" width="30" height="30" @pointerdown="dockChatRight">
           C
         </hawk-button>
       </hawk-view>
     </hawk-view>
 
-    <hawk-view id="bottom-drawer" class="bottom-drawer" width="1280" height="150">
+    <hawk-view id="bottom-drawer" class="bottom-drawer" width="1280" :height="drawerHeight">
       <hawk-view id="drawer-toolbar" class="drawer-toolbar" width="1280" height="34">
         <hawk-text id="drawer-tabs" width="392" height="28">Terminal | Logs | Debug | Problems</hawk-text>
         <hawk-button id="drawer-collapse" width="86" @pointerdown="collapseDrawer">Collapse</hawk-button>
