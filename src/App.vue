@@ -35,6 +35,7 @@ import {
   togglePanel,
   undockPanel,
   unpinPanel,
+  workbenchLayoutMetrics,
   type DockEdge,
   type DrawerMode,
   type DrawerTab,
@@ -138,6 +139,7 @@ const preview = ref<PreviewStatus>({
   cwd: workspace.value.project.root,
   output: [],
 });
+const surfaceSize = ref({ width: 960, height: 540 });
 const profile = computed(() => activeProfile(workspace.value));
 const activeTab = computed(() => activeDocument(documents.value));
 const statusItems = computed(() => statusItemsWithPreview(workbench.value.statusItems, preview.value.state));
@@ -147,6 +149,7 @@ const terminal = ref<TerminalStatus | null>(null);
 const sidecarAvailable = computed(() => sidecar.value?.state === "open");
 const problems = computed(() => lspProblems(lsp.value, workspace.value.project.root));
 const terminalLabel = computed(() => terminal.value?.message ?? "Terminal bridge is idle.");
+const layout = computed(() => workbenchLayoutMetrics(surfaceSize.value, workbench.value.drawer.mode));
 const resolvedTheme = computed(() => resolveWorkbenchTheme(workspace.value.editor.theme));
 const rootClass = computed(() => `editor-root ${themeClassName(workspace.value.editor.theme)}`);
 const leftDockItems = computed(() => dockItems("left"));
@@ -264,15 +267,19 @@ function handleRootKeydown(event: { key?: string }) {
   if (event.key === "Escape") closeActivePeek();
 }
 
-function handleRootResize(event: { width?: number; height?: number }) {
-  if (!Number.isFinite(event.width) || !Number.isFinite(event.height)) return;
+function handleRootResize(event: { width?: number; height?: number; detail?: { width?: number; height?: number } }) {
+  const width = Number(event.width ?? event.detail?.width);
+  const height = Number(event.height ?? event.detail?.height);
+  if (!Number.isFinite(width) || !Number.isFinite(height)) return;
+  surfaceSize.value = { width, height };
+  const nextLayout = workbenchLayoutMetrics({ width, height }, workbench.value.drawer.mode);
   setWorkbenchPanels(
     recoverPanelsForViewport(workbench.value.panels, {
-      width: Number(event.width),
-      height: Number(event.height),
-      topBarHeight: 42,
-      bottomReservedHeight: drawerReservedHeight(workbench.value.drawer.mode) + 24,
-      gutterWidth: 34,
+      width: nextLayout.width,
+      height: nextLayout.height,
+      topBarHeight: nextLayout.topBarHeight,
+      bottomReservedHeight: nextLayout.drawerHeight + nextLayout.statusBarHeight,
+      gutterWidth: nextLayout.gutterWidth,
     }),
   );
 }
@@ -290,12 +297,6 @@ function dockItems(edge: DockEdge): DockPanelItem[] {
   return panelNames
     .map((name) => ({ id: name, label: panelLabels[name], ...workbench.value.panels[name] }))
     .filter((item) => item.mode !== "floating" && item.dockEdge === edge);
-}
-
-function drawerReservedHeight(mode: DrawerMode): number {
-  if (mode === "expanded") return 260;
-  if (mode === "compact") return 150;
-  return 36;
 }
 
 function setActiveEditorTab(id: string) {
@@ -553,32 +554,39 @@ function severityLabel(severity: number | undefined): string {
 </script>
 
 <template>
-  <hawk-view id="editor-root" :class="rootClass" @keydown="handleRootKeydown" @resize="handleRootResize">
-    <hawk-view id="topbar" class="topbar">
-      <hawk-view id="app-brand" class="command-group">
+  <hawk-view
+    id="editor-root"
+    :class="rootClass"
+    :width="layout.width"
+    :height="layout.height"
+    @keydown="handleRootKeydown"
+    @resize="handleRootResize"
+  >
+    <hawk-view id="topbar" class="topbar" :width="layout.width" :height="layout.topBarHeight">
+      <hawk-view id="app-brand" class="command-group" :width="180" :height="layout.topBarHeight">
         <hawk-text id="app-title">Hawk2UI Editor</hawk-text>
         <hawk-text id="app-subtitle" class="muted">Workbench</hawk-text>
       </hawk-view>
 
-      <hawk-view id="command-actions" class="command-group">
-        <hawk-button id="command-open">Open</hawk-button>
-        <hawk-button id="command-new-file">New</hawk-button>
-        <hawk-button id="command-save" @pointer-press="saveEditorTab(activeTab.id)">Save</hawk-button>
-        <hawk-button id="command-validate" @pointer-press="selectDrawer('problems')">Validate</hawk-button>
-        <hawk-button id="command-build" @pointer-press="selectDrawer('logs')">Build</hawk-button>
-        <hawk-button id="command-run" @pointer-press="preview.state = 'starting'">Run</hawk-button>
-        <hawk-button id="command-stop" @pointer-press="preview.state = 'stopped'">Stop</hawk-button>
-        <hawk-button id="command-palette" @pointer-press="selectDrawer('logs')">Palette</hawk-button>
+      <hawk-view id="command-actions" class="command-group" :width="560" :height="layout.topBarHeight">
+        <hawk-button id="command-open" :width="56">Open</hawk-button>
+        <hawk-button id="command-new-file" :width="50">New</hawk-button>
+        <hawk-button id="command-save" :width="56" @pointer-press="saveEditorTab(activeTab.id)">Save</hawk-button>
+        <hawk-button id="command-validate" :width="78" @pointer-press="selectDrawer('problems')">Validate</hawk-button>
+        <hawk-button id="command-build" :width="58" @pointer-press="selectDrawer('logs')">Build</hawk-button>
+        <hawk-button id="command-run" :width="48" @pointer-press="preview.state = 'starting'">Run</hawk-button>
+        <hawk-button id="command-stop" :width="50" @pointer-press="preview.state = 'stopped'">Stop</hawk-button>
+        <hawk-button id="command-palette" :width="72" @pointer-press="selectDrawer('logs')">Palette</hawk-button>
       </hawk-view>
 
-      <hawk-view id="panel-launchers" class="command-group">
-        <hawk-button id="toggle-project" @pointer-press="toggleWorkbenchPanel('project')">Project</hawk-button>
-        <hawk-button id="toggle-chat" @pointer-press="toggleWorkbenchPanel('assistant')">Chat</hawk-button>
-        <hawk-button id="toggle-docs" @pointer-press="toggleWorkbenchPanel('docs')">Docs</hawk-button>
-        <hawk-button id="toggle-editor-settings" @pointer-press="toggleWorkbenchPanel('editorSettings')">
+      <hawk-view id="panel-launchers" class="command-group" :width="360" :height="layout.topBarHeight">
+        <hawk-button id="toggle-project" :width="68" @pointer-press="toggleWorkbenchPanel('project')">Project</hawk-button>
+        <hawk-button id="toggle-chat" :width="54" @pointer-press="toggleWorkbenchPanel('assistant')">Chat</hawk-button>
+        <hawk-button id="toggle-docs" :width="54" @pointer-press="toggleWorkbenchPanel('docs')">Docs</hawk-button>
+        <hawk-button id="toggle-editor-settings" :width="60" @pointer-press="toggleWorkbenchPanel('editorSettings')">
           Editor
         </hawk-button>
-        <hawk-button id="toggle-chat-settings" @pointer-press="toggleWorkbenchPanel('chatSettings')">
+        <hawk-button id="toggle-chat-settings" :width="112" @pointer-press="toggleWorkbenchPanel('chatSettings')">
           Chat Settings
         </hawk-button>
       </hawk-view>
@@ -590,6 +598,7 @@ function severityLabel(severity: number | undefined): string {
       :panels="leftDockItems"
       :active-panel-id="activeDockPanelId"
       :peeked-panel-id="peekedPanelId"
+      :height="layout.workspaceHeight"
       @open-panel="openDockedPanel"
       @peek-panel="schedulePeekPanel"
       @close-peek="closePeek"
@@ -604,6 +613,7 @@ function severityLabel(severity: number | undefined): string {
       :panels="rightDockItems"
       :active-panel-id="activeDockPanelId"
       :peeked-panel-id="peekedPanelId"
+      :height="layout.workspaceHeight"
       @open-panel="openDockedPanel"
       @peek-panel="schedulePeekPanel"
       @close-peek="closePeek"
@@ -612,11 +622,19 @@ function severityLabel(severity: number | undefined): string {
       @undock-panel="restoreWorkbenchPanel"
     />
 
-    <hawk-view id="workspace" class="workspace" @pointer-press="closeActivePeek">
+    <hawk-view
+      id="workspace"
+      class="workspace"
+      :width="layout.width"
+      :height="layout.workspaceHeight"
+      @pointer-press="closeActivePeek"
+    >
       <EditorWorkspace
         :tabs="documents.documents"
         :active-tab-id="documents.activeDocumentId ?? ''"
         :sidecar-available="sidecarAvailable"
+        :width="layout.width"
+        :height="layout.workspaceHeight"
         @select="setActiveEditorTab"
         @save="saveEditorTab"
         @open-sidecar="requestSidecar"
@@ -629,6 +647,7 @@ function severityLabel(severity: number | undefined): string {
       :preview="preview"
       :problems="problems"
       :terminal-label="terminalLabel"
+      :width="layout.width"
       @select-tab="selectDrawer"
       @set-mode="setDrawer"
       @start-preview="preview.state = 'starting'"
@@ -637,7 +656,13 @@ function severityLabel(severity: number | undefined): string {
       @close-terminal="closeTerminalSidecar"
     />
 
-    <StatusBar :items="statusItems" :active-path="activeTab.path" :provider-label="profile.label" />
+    <StatusBar
+      :items="statusItems"
+      :active-path="activeTab.path"
+      :provider-label="profile.label"
+      :width="layout.width"
+      :height="layout.statusBarHeight"
+    />
 
     <HawkFloatingPanel
       v-if="panel('project').open"

@@ -39,6 +39,16 @@ export interface WorkbenchViewport {
   gutterWidth?: number;
 }
 
+export interface WorkbenchLayoutMetrics {
+  width: number;
+  height: number;
+  topBarHeight: number;
+  drawerHeight: number;
+  statusBarHeight: number;
+  gutterWidth: number;
+  workspaceHeight: number;
+}
+
 export function defaultWorkbenchPanels(): Record<WorkbenchPanelName, PanelState> {
   return {
     project: normalizePanelState({ open: true, x: 20, y: 56, width: 360, height: 560 }),
@@ -281,6 +291,27 @@ export function recoverPanelForViewport(panel: PanelState, viewport: WorkbenchVi
     width,
     height,
   };
+}
+
+export function drawerHeightForMode(mode: DrawerMode): number {
+  if (mode === "expanded") return 260;
+  if (mode === "compact") return 150;
+  return 36;
+}
+
+export function workbenchLayoutMetrics(
+  surface: { width: number; height: number },
+  drawerMode: DrawerMode,
+): WorkbenchLayoutMetrics {
+  const width = Math.max(420, finiteNumber(surface.width, 960));
+  const height = Math.max(260, finiteNumber(surface.height, 540));
+  const topBarHeight = 42;
+  const statusBarHeight = 24;
+  const gutterWidth = 34;
+  const drawerHeight = drawerHeightForMode(drawerMode);
+  const workspaceHeight = Math.max(180, height - topBarHeight - drawerHeight - statusBarHeight);
+
+  return { width, height, topBarHeight, drawerHeight, statusBarHeight, gutterWidth, workspaceHeight };
 }
 
 export function setDrawerMode(drawer: DrawerState, mode: DrawerMode): DrawerState {

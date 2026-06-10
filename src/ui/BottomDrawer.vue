@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { DrawerMode, DrawerTab } from "../core/workbench";
+import { drawerHeightForMode, type DrawerMode, type DrawerTab } from "../core/workbench";
 import type { PreviewStatus } from "../preview/previewClient";
 import { previewStatusLabel } from "../preview/previewClient";
 
@@ -18,6 +18,7 @@ defineProps<{
   preview: PreviewStatus;
   problems: ProblemEntry[];
   terminalLabel: string;
+  width: number;
 }>();
 
 const emit = defineEmits<{
@@ -36,9 +37,7 @@ function drawerClass(mode: DrawerMode): string {
 }
 
 function drawerHeight(mode: DrawerMode): number {
-  if (mode === "expanded") return 260;
-  if (mode === "compact") return 150;
-  return 36;
+  return drawerHeightForMode(mode);
 }
 
 function tabClass(tab: DrawerTab, activeTab: DrawerTab): string {
@@ -47,8 +46,8 @@ function tabClass(tab: DrawerTab, activeTab: DrawerTab): string {
 </script>
 
 <template>
-  <hawk-view id="bottom-drawer" :class="drawerClass(mode)" :height="drawerHeight(mode)">
-    <hawk-view id="drawer-toolbar" class="drawer-toolbar" :height="34">
+  <hawk-view id="bottom-drawer" :class="drawerClass(mode)" :width="width" :height="drawerHeight(mode)">
+    <hawk-view id="drawer-toolbar" class="drawer-toolbar" :width="width" :height="34">
       <hawk-button
         v-for="tab in tabs"
         :id="`drawer-tab-${tab}`"
@@ -64,7 +63,13 @@ function tabClass(tab: DrawerTab, activeTab: DrawerTab): string {
       <hawk-button id="drawer-expand" :width="72" @pointer-press="emit('setMode', 'expanded')">Expand</hawk-button>
     </hawk-view>
 
-    <hawk-view v-if="mode !== 'collapsed'" id="drawer-body" class="drawer-body" :height="drawerHeight(mode) - 34">
+    <hawk-view
+      v-if="mode !== 'collapsed'"
+      id="drawer-body"
+      class="drawer-body"
+      :width="width"
+      :height="drawerHeight(mode) - 34"
+    >
       <hawk-view v-if="activeTab === 'terminal'" id="drawer-terminal">
         <hawk-text id="drawer-terminal-status" class="mono">{{ terminalLabel }}</hawk-text>
         <hawk-button id="drawer-open-terminal" :width="112" @pointer-press="emit('openTerminal')">Open Terminal</hawk-button>

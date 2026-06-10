@@ -5,6 +5,8 @@ defineProps<{
   items: StatusItem[];
   activePath: string;
   providerLabel: string;
+  width: number;
+  height: number;
 }>();
 
 function toneClass(item: StatusItem): string {
@@ -14,7 +16,7 @@ function toneClass(item: StatusItem): string {
 </script>
 
 <template>
-  <hawk-view id="status-bar" class="status-bar">
+  <hawk-view id="status-bar" class="status-bar" :width="width" :height="height">
     <hawk-text
       v-for="item in items"
       :id="`status-${item.id}`"

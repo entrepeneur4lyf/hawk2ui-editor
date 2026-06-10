@@ -16,6 +16,7 @@ import {
   togglePanel,
   undockPanel,
   unpinPanel,
+  workbenchLayoutMetrics,
   type WorkbenchPanelName,
 } from "./workbench";
 
@@ -154,6 +155,28 @@ describe("workbench shell", () => {
 
     expect(setDrawerMode(state.drawer, "expanded")).toEqual({ mode: "expanded", activeTab: "logs" });
     expect(selectDrawerTab(state.drawer, "problems")).toEqual({ mode: "compact", activeTab: "problems" });
+  });
+
+  test("allocates explicit native shell regions", () => {
+    expect(workbenchLayoutMetrics({ width: 960, height: 540 }, "compact")).toEqual({
+      width: 960,
+      height: 540,
+      topBarHeight: 42,
+      drawerHeight: 150,
+      statusBarHeight: 24,
+      gutterWidth: 34,
+      workspaceHeight: 324,
+    });
+
+    expect(workbenchLayoutMetrics({ width: 420, height: 260 }, "expanded")).toEqual({
+      width: 420,
+      height: 260,
+      topBarHeight: 42,
+      drawerHeight: 260,
+      statusBarHeight: 24,
+      gutterWidth: 34,
+      workspaceHeight: 180,
+    });
   });
 
   test("reflects preview state in status items", () => {

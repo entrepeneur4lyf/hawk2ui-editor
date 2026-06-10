@@ -6,6 +6,8 @@ const props = defineProps<{
   tabs: EditorDocument[];
   activeTabId: string;
   sidecarAvailable: boolean;
+  width: number;
+  height: number;
 }>();
 
 const emit = defineEmits<{
@@ -22,6 +24,12 @@ const contentLines = computed(() => {
   return (activeTab.value?.content ?? "").split("\n").slice(0, 18);
 });
 
+const tabBarHeight = 34;
+const actionBarHeight = 36;
+const metaHeight = 28;
+const surfaceHeight = computed(() => Math.max(120, props.height - tabBarHeight));
+const bufferHeight = computed(() => Math.max(80, surfaceHeight.value - metaHeight - actionBarHeight));
+
 function tabState(tab: EditorDocument): string {
   const flags = [tab.language];
   if (tab.readOnly) flags.push("read-only");
@@ -35,8 +43,8 @@ function tabDomId(tab: EditorDocument): string {
 </script>
 
 <template>
-  <hawk-view id="editor-workspace" class="editor-workspace">
-    <hawk-view id="editor-tabs" class="editor-tabs">
+  <hawk-view id="editor-workspace" class="editor-workspace" :width="width" :height="height">
+    <hawk-view id="editor-tabs" class="editor-tabs" :width="width" :height="tabBarHeight">
       <hawk-button
         v-for="tab in tabs"
         :id="tabDomId(tab)"
@@ -48,13 +56,13 @@ function tabDomId(tab: EditorDocument): string {
       </hawk-button>
     </hawk-view>
 
-    <hawk-view v-if="activeTab" id="editor-surface" class="editor-surface">
-      <hawk-view id="editor-meta" class="editor-meta">
+    <hawk-view v-if="activeTab" id="editor-surface" class="editor-surface" :width="width" :height="surfaceHeight">
+      <hawk-view id="editor-meta" class="editor-meta" :width="width" :height="metaHeight">
         <hawk-text id="editor-path">{{ activeTab.path }}</hawk-text>
         <hawk-text id="editor-language" class="muted">{{ tabState(activeTab) }}</hawk-text>
       </hawk-view>
 
-      <hawk-view id="editor-buffer" class="editor-buffer">
+      <hawk-view id="editor-buffer" class="editor-buffer" :width="width" :height="bufferHeight">
         <hawk-text
           v-for="(line, index) in contentLines"
           :id="`editor-line-${index + 1}`"
@@ -65,7 +73,7 @@ function tabDomId(tab: EditorDocument): string {
         </hawk-text>
       </hawk-view>
 
-      <hawk-view id="editor-actions" class="editor-actions">
+      <hawk-view id="editor-actions" class="editor-actions" :width="width" :height="actionBarHeight">
         <hawk-button id="editor-save-active" @pointer-press="emit('save', activeTab.id)">Save</hawk-button>
         <hawk-button id="editor-open-sidecar" @pointer-press="emit('openSidecar', activeTab.path)">
           Open Sidecar
