@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
   closeEditorSidecar,
+  createEditorSidecarPayload,
   currentEditorSidecarState,
   handleEditorSidecarMessage,
   openEditorSidecar,
@@ -72,6 +73,29 @@ describe("webview editor sidecar", () => {
       lastError: "project path escapes root: ../secret.ts",
       message: "project path escapes root: ../secret.ts",
     });
+  });
+
+  test("creates launch payloads with explicit theme and black fallback", () => {
+    expect(
+      createEditorSidecarPayload({
+        projectRoot: directory,
+        relativePath: "sample.ts",
+        filePath: join(directory, "sample.ts"),
+        initialText: "export const value = 1;\n",
+        scriptPath: "/tmp/editor.js",
+        theme: "light",
+      }),
+    ).toMatchObject({ theme: "light" });
+
+    expect(
+      createEditorSidecarPayload({
+        projectRoot: directory,
+        relativePath: "sample.ts",
+        filePath: join(directory, "sample.ts"),
+        initialText: "",
+        scriptPath: "/tmp/editor.js",
+      }),
+    ).toMatchObject({ theme: "black" });
   });
 
   test("closes the active sidecar state", () => {

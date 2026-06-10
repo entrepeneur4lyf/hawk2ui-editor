@@ -16,7 +16,7 @@ export type TerminalSidecarMessage =
   | { type: "terminalReady"; root: string; cols?: number; rows?: number }
   | { type: "terminalError"; root?: string; message: string };
 
-interface TerminalSidecarPayload {
+export interface TerminalSidecarPayload {
   projectRoot: string;
   scriptPath: string;
   terminalUrl: string;
@@ -24,6 +24,10 @@ interface TerminalSidecarPayload {
   rows: number;
   theme: ResolvedWorkbenchTheme;
 }
+
+export type TerminalSidecarPayloadInput = Omit<TerminalSidecarPayload, "theme"> & {
+  theme?: ResolvedWorkbenchTheme;
+};
 
 const terminalEventPrefix = "HAWK_TERMINAL_EVENT ";
 
@@ -70,6 +74,10 @@ export function handleTerminalSidecarMessage(message: TerminalSidecarMessage): T
   return currentTerminalSidecarState();
 }
 
+export function createTerminalSidecarPayload(input: TerminalSidecarPayloadInput): TerminalSidecarPayload {
+  return { ...input, theme: input.theme ?? "black" };
+}
+
 export async function openTerminalSidecar(
   projectRoot: string,
   theme: ResolvedWorkbenchTheme = "black",
@@ -103,14 +111,14 @@ export async function openTerminalSidecar(
   try {
     await verifyTerminalSidecarDependencies();
     const scriptPath = await buildWebviewTerminalBundle();
-    const payloadPath = writeTerminalPayload({
+    const payloadPath = writeTerminalPayload(createTerminalSidecarPayload({
       projectRoot: root,
       scriptPath,
       terminalUrl: `ws://127.0.0.1:${Number(process.env.HAWK2UI_EDITOR_BRIDGE_PORT ?? "47321")}/terminal?root=${encodeURIComponent(root)}`,
       cols: state.cols,
       rows: state.rows,
       theme,
-    });
+    }));
 
     activeProcess?.kill();
     activeProcess = Bun.spawn({

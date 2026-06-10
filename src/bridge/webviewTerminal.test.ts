@@ -4,6 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import {
   closeTerminalSidecar,
+  createTerminalSidecarPayload,
   currentTerminalSidecarState,
   handleTerminalSidecarMessage,
   openTerminalSidecar,
@@ -59,6 +60,29 @@ describe("webview terminal sidecar", () => {
       root: null,
       lastError: `project root does not exist: ${join(directory, "missing")}`,
     });
+  });
+
+  test("creates launch payloads with explicit theme and black fallback", () => {
+    expect(
+      createTerminalSidecarPayload({
+        projectRoot: directory,
+        scriptPath: "/tmp/terminal.js",
+        terminalUrl: "ws://127.0.0.1:47321/terminal",
+        cols: 100,
+        rows: 30,
+        theme: "light",
+      }),
+    ).toMatchObject({ theme: "light" });
+
+    expect(
+      createTerminalSidecarPayload({
+        projectRoot: directory,
+        scriptPath: "/tmp/terminal.js",
+        terminalUrl: "ws://127.0.0.1:47321/terminal",
+        cols: 80,
+        rows: 24,
+      }),
+    ).toMatchObject({ theme: "black" });
   });
 
   test("closes the active sidecar state", () => {

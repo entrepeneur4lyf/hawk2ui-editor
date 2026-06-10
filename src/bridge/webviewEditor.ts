@@ -23,7 +23,7 @@ export type EditorSidecarMessage =
   | { type: "documentSaved"; path: string; savedAt?: string }
   | { type: "editorError"; path?: string; message: string };
 
-interface EditorSidecarPayload {
+export interface EditorSidecarPayload {
   projectRoot: string;
   relativePath: string;
   filePath: string;
@@ -31,6 +31,10 @@ interface EditorSidecarPayload {
   scriptPath: string;
   theme: ResolvedWorkbenchTheme;
 }
+
+export type EditorSidecarPayloadInput = Omit<EditorSidecarPayload, "theme"> & {
+  theme?: ResolvedWorkbenchTheme;
+};
 
 const editorEventPrefix = "HAWK_EDITOR_EVENT ";
 
@@ -111,6 +115,10 @@ export function handleEditorSidecarMessage(message: EditorSidecarMessage): Edito
   return currentEditorSidecarState();
 }
 
+export function createEditorSidecarPayload(input: EditorSidecarPayloadInput): EditorSidecarPayload {
+  return { ...input, theme: input.theme ?? "black" };
+}
+
 export async function openEditorSidecar(
   projectRoot: string,
   relativePath: string,
@@ -153,14 +161,14 @@ export async function openEditorSidecar(
     await verifyWebviewBinding();
     const scriptPath = await buildWebviewEditorBundle();
     const file = await readProjectFile(projectRoot, relativePath);
-    const payloadPath = writeEditorPayload({
+    const payloadPath = writeEditorPayload(createEditorSidecarPayload({
       projectRoot,
       relativePath,
       filePath: resolved,
       initialText: file.content,
       scriptPath,
       theme,
-    });
+    }));
 
     activeProcess?.kill();
     activeProcess = Bun.spawn({
