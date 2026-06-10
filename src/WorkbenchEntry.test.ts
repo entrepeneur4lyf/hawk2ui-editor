@@ -179,6 +179,52 @@ describe("interactive workbench entry", () => {
     expect(directChildIds(overlay)).toContain("active-panel");
   });
 
+  test("uses explicit native coordinates for major shell regions", () => {
+    const source = readFileSync(join(import.meta.dir, "WorkbenchEntry.vue"), "utf8");
+    const output = compileHawkVue({ filename: "src/WorkbenchEntry.vue", source });
+    const nodes = flattenNodes(output.compilerArtifact.root as CompiledNode);
+    const artifact = output.compilerArtifact as CompiledArtifact;
+    const expectedCoordinates: Record<string, { x: number; y: number }> = {
+      topbar: { x: 0, y: 0 },
+      "app-title": { x: 6, y: 8 },
+      "command-project-group": { x: 174, y: 0 },
+      "command-run-group": { x: 338, y: 0 },
+      "panel-launchers": { x: 574, y: 0 },
+      "command-overflow-group": { x: 866, y: 0 },
+      workspace: { x: 0, y: 42 },
+      "editor-workspace": { x: 0, y: 0 },
+      "editor-tabs": { x: 0, y: 0 },
+      "editor-path": { x: 44, y: 42 },
+      "editor-line-1": { x: 44, y: 80 },
+      "editor-line-2": { x: 44, y: 108 },
+      "editor-line-3": { x: 44, y: 136 },
+      "editor-actions": { x: 44, y: 176 },
+      "editor-notice": { x: 44, y: 220 },
+      "bottom-drawer": { x: 0, y: 366 },
+      "status-bar": { x: 0, y: 516 },
+    };
+
+    for (const [id, coordinates] of Object.entries(expectedCoordinates)) {
+      const node = nodes.find((candidate) => candidate.id === id);
+      expect(numberProp(node, "x")).toBe(coordinates.x);
+      expect(numberProp(node, "y")).toBe(coordinates.y);
+    }
+
+    expect(artifact.dynamic_bindings.some((binding) => binding.node_id === "bottom-drawer" && binding.target.name === "y")).toBe(false);
+  });
+
+  test("avoids unsupported dynamic native coordinate bindings", () => {
+    const source = readFileSync(join(import.meta.dir, "WorkbenchEntry.vue"), "utf8");
+    const output = compileHawkVue({ filename: "src/WorkbenchEntry.vue", source });
+    const artifact = output.compilerArtifact as CompiledArtifact;
+
+    expect(
+      artifact.dynamic_bindings.filter((binding) => {
+        return binding.target.type === "prop" && (binding.target.name === "x" || binding.target.name === "y");
+      }),
+    ).toEqual([]);
+  });
+
   test("binds drawer mode controls to explicit collapsed, compact, and expanded heights", () => {
     const source = readFileSync(join(import.meta.dir, "WorkbenchEntry.vue"), "utf8");
     const output = compileHawkVue({ filename: "src/WorkbenchEntry.vue", source });

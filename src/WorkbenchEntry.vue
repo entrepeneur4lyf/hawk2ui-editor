@@ -5,7 +5,7 @@ const status = ref("Ready");
 const drawerTab = ref("Logs");
 const drawerMode = ref("compact");
 const drawerHeight = ref(150);
-const workspaceHeight = ref(604);
+const workspaceHeight = ref(324);
 const drawerBody = ref("Bridge idle. Use Validate, Build, Run, or Terminal.");
 const activePanel = ref("Project");
 const panelMode = ref("floating");
@@ -208,21 +208,18 @@ function selectProblemsTab() {
 function collapseDrawer() {
   drawerMode.value = "collapsed";
   drawerHeight.value = 36;
-  workspaceHeight.value = 718;
   status.value = "Drawer collapsed";
 }
 
 function compactDrawer() {
   drawerMode.value = "compact";
   drawerHeight.value = 150;
-  workspaceHeight.value = 604;
   status.value = "Drawer compact";
 }
 
 function expandDrawer() {
   drawerMode.value = "expanded";
   drawerHeight.value = 260;
-  workspaceHeight.value = 494;
   status.value = "Drawer expanded";
 }
 
@@ -279,78 +276,84 @@ function openTerminal() {
 </script>
 
 <template>
-  <hawk-view id="editor-root" class="theme-black" width="1280" height="820">
-    <hawk-view id="topbar" class="topbar" width="1280" height="42">
-      <hawk-text id="app-title" width="180">Hawk2UI Editor</hawk-text>
-      <hawk-view id="command-project-group" class="command-group" width="162" height="42">
-        <hawk-button id="command-open-project" width="56" @pointerdown="openProject">Open</hawk-button>
-        <hawk-button id="command-new-file" width="50" @pointerdown="newFile">New</hawk-button>
-        <hawk-button id="command-save" width="56" @pointerdown="saveFile">Save</hawk-button>
+  <hawk-view id="editor-root" class="theme-black" width="960" height="540">
+    <hawk-view id="topbar" class="topbar" :x="0" :y="0" width="960" height="42">
+      <hawk-text id="app-title" :x="6" :y="8" width="164" height="28">Hawk2UI Editor</hawk-text>
+      <hawk-view id="command-project-group" class="command-group" :x="174" :y="0" width="162" height="42">
+        <hawk-button id="command-open-project" :x="0" :y="5" width="56" height="32" @pointerdown="openProject">Open</hawk-button>
+        <hawk-button id="command-new-file" :x="56" :y="5" width="50" height="32" @pointerdown="newFile">New</hawk-button>
+        <hawk-button id="command-save" :x="106" :y="5" width="56" height="32" @pointerdown="saveFile">Save</hawk-button>
       </hawk-view>
-      <hawk-view id="command-run-group" class="command-group" width="234" height="42">
-        <hawk-button id="command-validate" width="78" @pointerdown="validateProject">Validate</hawk-button>
-        <hawk-button id="command-build" width="58" @pointerdown="buildProject">Build</hawk-button>
-        <hawk-button id="command-run" width="48" @pointerdown="runPreview">Run</hawk-button>
-        <hawk-button id="command-stop" width="50" @pointerdown="stopPreview">Stop</hawk-button>
+      <hawk-view id="command-run-group" class="command-group" :x="338" :y="0" width="234" height="42">
+        <hawk-button id="command-validate" :x="0" :y="5" width="78" height="32" @pointerdown="validateProject">Validate</hawk-button>
+        <hawk-button id="command-build" :x="78" :y="5" width="58" height="32" @pointerdown="buildProject">Build</hawk-button>
+        <hawk-button id="command-run" :x="136" :y="5" width="48" height="32" @pointerdown="runPreview">Run</hawk-button>
+        <hawk-button id="command-stop" :x="184" :y="5" width="50" height="32" @pointerdown="stopPreview">Stop</hawk-button>
       </hawk-view>
-      <hawk-view id="panel-launchers" class="command-group" width="290" height="42">
-        <hawk-button id="toggle-project" width="60" @pointerdown="showProject">Project</hawk-button>
-        <hawk-button id="toggle-chat" width="44" @pointerdown="showChat">Chat</hawk-button>
-        <hawk-button id="toggle-docs" width="44" @pointerdown="showDocs">Docs</hawk-button>
-        <hawk-button id="toggle-editor-settings" width="54" @pointerdown="showEditorSettings">Editor</hawk-button>
-        <hawk-button id="toggle-chat-settings" width="88" @pointerdown="showChatSettings">Chat Cfg</hawk-button>
+      <hawk-view id="panel-launchers" class="command-group" :x="574" :y="0" width="290" height="42">
+        <hawk-button id="toggle-project" :x="0" :y="5" width="60" height="32" @pointerdown="showProject">Project</hawk-button>
+        <hawk-button id="toggle-chat" :x="60" :y="5" width="44" height="32" @pointerdown="showChat">Chat</hawk-button>
+        <hawk-button id="toggle-docs" :x="104" :y="5" width="44" height="32" @pointerdown="showDocs">Docs</hawk-button>
+        <hawk-button id="toggle-editor-settings" :x="148" :y="5" width="54" height="32" @pointerdown="showEditorSettings">Editor</hawk-button>
+        <hawk-button id="toggle-chat-settings" :x="202" :y="5" width="88" height="32" @pointerdown="showChatSettings">Chat Cfg</hawk-button>
       </hawk-view>
-      <hawk-view id="command-overflow-group" class="command-group" width="72" height="42">
-        <hawk-button id="command-palette" width="72" @pointerdown="openPalette">Palette</hawk-button>
+      <hawk-view id="command-overflow-group" class="command-group" :x="866" :y="0" width="72" height="42">
+        <hawk-button id="command-palette" :x="0" :y="5" width="72" height="32" @pointerdown="openPalette">Palette</hawk-button>
       </hawk-view>
     </hawk-view>
 
-    <hawk-view id="workspace" class="workspace" width="1280" :height="workspaceHeight">
+    <hawk-view id="workspace" class="workspace" :x="0" :y="42" width="960" :height="workspaceHeight">
       <hawk-view
         v-show="leftDockVisible"
         id="dock-gutter-left"
         class="dock-gutter dock-gutter-left"
+        :x="0"
+        :y="0"
         width="34"
         :height="workspaceHeight"
       >
-        <hawk-button id="dock-left-project" class="dock-icon" width="30" height="30" @pointerdown="dockProjectLeft">
+        <hawk-button id="dock-left-project" class="dock-icon" :x="2" :y="8" width="30" height="30" @pointerdown="dockProjectLeft">
           P
         </hawk-button>
-        <hawk-button id="dock-left-docs" class="dock-icon" width="30" height="30" @pointerdown="dockDocsLeft">
+        <hawk-button id="dock-left-docs" class="dock-icon" :x="2" :y="44" width="30" height="30" @pointerdown="dockDocsLeft">
           D
         </hawk-button>
       </hawk-view>
 
-      <hawk-view id="editor-workspace" class="editor-workspace" width="1280" :height="workspaceHeight">
-        <hawk-view id="editor-tabs" class="editor-tabs" width="1280" height="34">
-          <hawk-button id="editor-tab-app" width="86" @pointerdown="selectAppTab">App.vue</hawk-button>
-          <hawk-button id="editor-tab-readme" width="102" @pointerdown="selectReadmeTab">README.md</hawk-button>
-          <hawk-button id="editor-tab-manifest" width="96" @pointerdown="selectManifestTab">hawk.json</hawk-button>
+      <hawk-view id="editor-workspace" class="editor-workspace" :x="0" :y="0" width="960" :height="workspaceHeight">
+        <hawk-view id="editor-tabs" class="editor-tabs" :x="0" :y="0" width="960" height="34">
+          <hawk-button id="editor-tab-app" :x="0" :y="2" width="86" height="30" @pointerdown="selectAppTab">App.vue</hawk-button>
+          <hawk-button id="editor-tab-readme" :x="86" :y="2" width="102" height="30" @pointerdown="selectReadmeTab">README.md</hawk-button>
+          <hawk-button id="editor-tab-manifest" :x="188" :y="2" width="96" height="30" @pointerdown="selectManifestTab">hawk.json</hawk-button>
         </hawk-view>
-        <hawk-text id="editor-path" class="muted" width="1280" height="28">{{ editorPath }} / {{ editorLanguage }}</hawk-text>
-        <hawk-text id="editor-line-1" class="code-line" width="1280" height="28">{{ editorLine1 }}</hawk-text>
-        <hawk-text id="editor-line-2" class="code-line" width="1280" height="28">{{ editorLine2 }}</hawk-text>
-        <hawk-text id="editor-line-3" class="code-line" width="1280" height="28">{{ editorLine3 }}</hawk-text>
-        <hawk-view id="editor-actions" class="editor-actions" width="1280" height="34">
-          <hawk-button id="editor-open-sidecar" width="132" @pointerdown="openEditorSidecar">Open Sidecar</hawk-button>
-          <hawk-text id="editor-sidecar-state" class="muted" width="180">Sidecar: {{ sidecarState }}</hawk-text>
+        <hawk-text id="editor-path" class="muted" :x="44" :y="42" width="870" height="28">{{ editorPath }} / {{ editorLanguage }}</hawk-text>
+        <hawk-text id="editor-line-1" class="code-line" :x="44" :y="80" width="870" height="28">{{ editorLine1 }}</hawk-text>
+        <hawk-text id="editor-line-2" class="code-line" :x="44" :y="108" width="870" height="28">{{ editorLine2 }}</hawk-text>
+        <hawk-text id="editor-line-3" class="code-line" :x="44" :y="136" width="870" height="28">{{ editorLine3 }}</hawk-text>
+        <hawk-view id="editor-actions" class="editor-actions" :x="44" :y="176" width="320" height="34">
+          <hawk-button id="editor-open-sidecar" :x="0" :y="0" width="132" height="32" @pointerdown="openEditorSidecar">Open Sidecar</hawk-button>
+          <hawk-text id="editor-sidecar-state" class="muted" :x="146" :y="6" width="180" height="24">Sidecar: {{ sidecarState }}</hawk-text>
         </hawk-view>
-        <hawk-text id="editor-notice" class="muted" width="1280" height="32">{{ editorNotice }}</hawk-text>
+        <hawk-text id="editor-notice" class="muted" :x="44" :y="220" width="520" height="32">{{ editorNotice }}</hawk-text>
       </hawk-view>
 
       <hawk-view
         v-show="rightDockVisible"
         id="dock-gutter-right"
         class="dock-gutter dock-gutter-right"
+        :x="926"
+        :y="0"
         width="34"
         :height="workspaceHeight"
       >
-        <hawk-button id="dock-right-chat" class="dock-icon" width="30" height="30" @pointerdown="dockChatRight">
+        <hawk-button id="dock-right-chat" class="dock-icon" :x="2" :y="8" width="30" height="30" @pointerdown="dockChatRight">
           C
         </hawk-button>
         <hawk-button
           id="dock-right-editor-settings"
           class="dock-icon"
+          :x="2"
+          :y="44"
           width="30"
           height="30"
           @pointerdown="dockEditorSettingsRight"
@@ -360,6 +363,8 @@ function openTerminal() {
         <hawk-button
           id="dock-right-chat-settings"
           class="dock-icon"
+          :x="2"
+          :y="80"
           width="30"
           height="30"
           @pointerdown="dockChatSettingsRight"
@@ -368,54 +373,54 @@ function openTerminal() {
         </hawk-button>
       </hawk-view>
 
-      <hawk-view id="panel-overlay-layer" class="panel-overlay-layer" width="1280" :height="workspaceHeight">
-        <hawk-view id="active-panel" class="panel floating-panel-overlay" width="360" height="360">
-          <hawk-text id="active-panel-title" class="panel-title" width="360" height="30">{{ activePanel }}</hawk-text>
-          <hawk-text id="active-panel-mode" class="muted" width="360" height="28">Mode: {{ panelMode }}</hawk-text>
-          <hawk-button id="panel-minimize" width="72" @pointerdown="minimizePanel">Min</hawk-button>
-          <hawk-button id="panel-dock-left" width="72" @pointerdown="dockLeft">Dock L</hawk-button>
-          <hawk-button id="panel-dock-right" width="72" @pointerdown="dockRight">Dock R</hawk-button>
-          <hawk-button id="panel-pin" width="72" @pointerdown="pinPanel">Pin</hawk-button>
-          <hawk-button id="panel-unpin" width="72" @pointerdown="unpinPanel">Unpin</hawk-button>
-          <hawk-button id="panel-restore" width="72" @pointerdown="restorePanel">Float</hawk-button>
-          <hawk-button id="drawer-open-terminal" width="132" @pointerdown="openTerminal">Terminal</hawk-button>
-          <hawk-text id="active-panel-primary" class="mono" width="340" height="42">{{ panelBodyPrimary }}</hawk-text>
-          <hawk-text id="active-panel-secondary" class="muted" width="340" height="42">{{ panelBodySecondary }}</hawk-text>
-          <hawk-button id="panel-open-app" width="72" @pointerdown="selectAppTab">App.vue</hawk-button>
-          <hawk-button id="panel-open-readme" width="92" @pointerdown="selectReadmeTab">README.md</hawk-button>
-          <hawk-button id="panel-open-manifest" width="92" @pointerdown="selectManifestTab">hawk.json</hawk-button>
+      <hawk-view id="panel-overlay-layer" class="panel-overlay-layer" :x="0" :y="0" width="960" :height="workspaceHeight">
+        <hawk-view id="active-panel" class="panel floating-panel-overlay" :x="590" :y="18" width="340" height="286">
+          <hawk-text id="active-panel-title" class="panel-title" :x="14" :y="10" width="220" height="30">{{ activePanel }}</hawk-text>
+          <hawk-text id="active-panel-mode" class="muted" :x="14" :y="42" width="220" height="26">Mode: {{ panelMode }}</hawk-text>
+          <hawk-button id="panel-minimize" :x="14" :y="76" width="58" height="30" @pointerdown="minimizePanel">Min</hawk-button>
+          <hawk-button id="panel-dock-left" :x="78" :y="76" width="66" height="30" @pointerdown="dockLeft">Dock L</hawk-button>
+          <hawk-button id="panel-dock-right" :x="150" :y="76" width="68" height="30" @pointerdown="dockRight">Dock R</hawk-button>
+          <hawk-button id="panel-pin" :x="224" :y="76" width="46" height="30" @pointerdown="pinPanel">Pin</hawk-button>
+          <hawk-button id="panel-unpin" :x="276" :y="76" width="58" height="30" @pointerdown="unpinPanel">Unpin</hawk-button>
+          <hawk-button id="panel-restore" :x="14" :y="112" width="58" height="30" @pointerdown="restorePanel">Float</hawk-button>
+          <hawk-button id="drawer-open-terminal" :x="78" :y="112" width="96" height="30" @pointerdown="openTerminal">Terminal</hawk-button>
+          <hawk-text id="active-panel-primary" class="mono" :x="14" :y="154" width="312" height="42">{{ panelBodyPrimary }}</hawk-text>
+          <hawk-text id="active-panel-secondary" class="muted" :x="14" :y="198" width="312" height="42">{{ panelBodySecondary }}</hawk-text>
+          <hawk-button id="panel-open-app" :x="14" :y="246" width="72" height="30" @pointerdown="selectAppTab">App.vue</hawk-button>
+          <hawk-button id="panel-open-readme" :x="92" :y="246" width="92" height="30" @pointerdown="selectReadmeTab">README.md</hawk-button>
+          <hawk-button id="panel-open-manifest" :x="190" :y="246" width="92" height="30" @pointerdown="selectManifestTab">hawk.json</hawk-button>
         </hawk-view>
       </hawk-view>
     </hawk-view>
 
-    <hawk-view id="bottom-drawer" class="bottom-drawer" width="1280" :height="drawerHeight">
-      <hawk-view id="drawer-toolbar" class="drawer-toolbar" width="1280" height="34">
-        <hawk-view id="drawer-tabs" class="drawer-tabs" width="392" height="34">
-          <hawk-button id="drawer-tab-terminal" width="98" @pointerdown="selectTerminalTab">Terminal</hawk-button>
-          <hawk-button id="drawer-tab-logs" width="78" @pointerdown="selectLogsTab">Logs</hawk-button>
-          <hawk-button id="drawer-tab-debug" width="80" @pointerdown="selectDebugTab">Debug</hawk-button>
-          <hawk-button id="drawer-tab-problems" width="104" @pointerdown="selectProblemsTab">Problems</hawk-button>
+    <hawk-view id="bottom-drawer" class="bottom-drawer" :x="0" :y="366" width="960" :height="drawerHeight">
+      <hawk-view id="drawer-toolbar" class="drawer-toolbar" :x="0" :y="0" width="960" height="34">
+        <hawk-view id="drawer-tabs" class="drawer-tabs" :x="4" :y="0" width="392" height="34">
+          <hawk-button id="drawer-tab-terminal" :x="0" :y="2" width="98" height="30" @pointerdown="selectTerminalTab">Terminal</hawk-button>
+          <hawk-button id="drawer-tab-logs" :x="98" :y="2" width="78" height="30" @pointerdown="selectLogsTab">Logs</hawk-button>
+          <hawk-button id="drawer-tab-debug" :x="176" :y="2" width="80" height="30" @pointerdown="selectDebugTab">Debug</hawk-button>
+          <hawk-button id="drawer-tab-problems" :x="256" :y="2" width="104" height="30" @pointerdown="selectProblemsTab">Problems</hawk-button>
         </hawk-view>
-        <hawk-button id="drawer-collapse" width="86" @pointerdown="collapseDrawer">Collapse</hawk-button>
-        <hawk-button id="drawer-compact" width="78" @pointerdown="compactDrawer">Compact</hawk-button>
-        <hawk-button id="drawer-expand" width="72" @pointerdown="expandDrawer">Expand</hawk-button>
+        <hawk-button id="drawer-collapse" :x="410" :y="2" width="86" height="30" @pointerdown="collapseDrawer">Collapse</hawk-button>
+        <hawk-button id="drawer-compact" :x="500" :y="2" width="78" height="30" @pointerdown="compactDrawer">Compact</hawk-button>
+        <hawk-button id="drawer-expand" :x="582" :y="2" width="72" height="30" @pointerdown="expandDrawer">Expand</hawk-button>
       </hawk-view>
-      <hawk-text id="drawer-active" class="mono" width="1280" height="28">Active: {{ drawerTab }}</hawk-text>
-      <hawk-text id="drawer-mode" class="mono" width="1280" height="28">Mode: {{ drawerMode }}</hawk-text>
-      <hawk-text id="drawer-body" class="mono" width="1280" height="44">{{ drawerBody }}</hawk-text>
+      <hawk-text id="drawer-active" class="mono" :x="10" :y="42" width="260" height="28">Active: {{ drawerTab }}</hawk-text>
+      <hawk-text id="drawer-mode" class="mono" :x="10" :y="70" width="260" height="28">Mode: {{ drawerMode }}</hawk-text>
+      <hawk-text id="drawer-body" class="mono" :x="10" :y="102" width="760" height="44">{{ drawerBody }}</hawk-text>
     </hawk-view>
 
-    <hawk-view id="status-bar" class="status-bar" width="1280" height="24">
-      <hawk-text id="status-project" width="160">Project: hawk2ui-editor</hawk-text>
-      <hawk-text id="status-manifest" width="112">Manifest: valid</hawk-text>
-      <hawk-text id="status-bridge" width="120">Bridge: ready</hawk-text>
-      <hawk-text id="status-lsp" width="110">LSP: ready</hawk-text>
-      <hawk-text id="status-terminal" width="130">Terminal: ready</hawk-text>
-      <hawk-text id="status-preview" width="130">Preview: {{ previewState }}</hawk-text>
-      <hawk-text id="status-cpu" class="mono" width="64">CPU: --</hawk-text>
-      <hawk-text id="status-mem" class="mono" width="64">MEM: --</hawk-text>
-      <hawk-text id="status-gpu" class="mono" width="84">GPU: pending</hawk-text>
-      <hawk-text id="status-current" width="280">Status: {{ status }}</hawk-text>
+    <hawk-view id="status-bar" class="status-bar" :x="0" :y="516" width="960" height="24">
+      <hawk-text id="status-project" :x="4" :y="3" width="126" height="18">Project: hawk2ui-editor</hawk-text>
+      <hawk-text id="status-manifest" :x="132" :y="3" width="96" height="18">Manifest: valid</hawk-text>
+      <hawk-text id="status-bridge" :x="230" :y="3" width="96" height="18">Bridge: ready</hawk-text>
+      <hawk-text id="status-lsp" :x="328" :y="3" width="82" height="18">LSP: ready</hawk-text>
+      <hawk-text id="status-terminal" :x="412" :y="3" width="100" height="18">Terminal: ready</hawk-text>
+      <hawk-text id="status-preview" :x="514" :y="3" width="104" height="18">Preview: {{ previewState }}</hawk-text>
+      <hawk-text id="status-cpu" class="mono" :x="620" :y="3" width="54" height="18">CPU: --</hawk-text>
+      <hawk-text id="status-mem" class="mono" :x="676" :y="3" width="54" height="18">MEM: --</hawk-text>
+      <hawk-text id="status-gpu" class="mono" :x="732" :y="3" width="76" height="18">GPU: pending</hawk-text>
+      <hawk-text id="status-current" :x="810" :y="3" width="146" height="18">Status: {{ status }}</hawk-text>
     </hawk-view>
   </hawk-view>
 </template>
