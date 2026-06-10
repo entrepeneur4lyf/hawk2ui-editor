@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { Application, Theme, WebviewApplicationEvent } from "@hawk2ui/editor-webview";
 import { writeProjectFile } from "./files";
 import { pathToFileUri } from "./lsp/protocol";
+import type { ResolvedWorkbenchTheme } from "../theme/workbenchTheme";
 
 interface EditorSidecarPayload {
   projectRoot: string;
@@ -9,6 +10,7 @@ interface EditorSidecarPayload {
   filePath: string;
   initialText: string;
   scriptPath: string;
+  theme?: ResolvedWorkbenchTheme;
 }
 
 const payloadPath = process.argv[2];
@@ -37,9 +39,10 @@ const webview = window.createWebview({
     rootUri: pathToFileUri(payload.projectRoot, "."),
     languageId: languageIdForPath(payload.relativePath),
     lspUrl: `ws://127.0.0.1:${bridgePort}/lsp?root=${encodeURIComponent(payload.projectRoot)}`,
+    theme: payload.theme ?? "black",
     text: payload.initialText,
   })};`,
-  theme: Theme.Dark,
+  theme: webviewTheme(payload.theme),
   clipboard: true,
 });
 
@@ -124,4 +127,8 @@ function languageIdForPath(path: string): string {
 
 function escapeInlineScript(scriptText: string): string {
   return scriptText.replaceAll("</script", "<\\/script");
+}
+
+function webviewTheme(theme: ResolvedWorkbenchTheme | undefined): Theme {
+  return theme === "light" ? Theme.Light : Theme.Dark;
 }

@@ -1,4 +1,5 @@
-import { defaultWorkbenchPanels } from "./workbench";
+import { defaultWorkbenchPanels, normalizePanelState, type DockEdge, type PanelMode } from "./workbench";
+import { normalizeThemePreference, type ThemePreference } from "../theme/workbenchTheme";
 
 export type AssistantCapability =
   | "chat"
@@ -44,17 +45,21 @@ export type AssistantProfile =
 
 export interface PanelState {
   open: boolean;
+  mode: PanelMode;
+  dockEdge?: DockEdge;
+  pinned: boolean;
   x: number;
   y: number;
   width: number;
   height: number;
+  lastFloating?: { x: number; y: number; width: number; height: number };
 }
 
 export interface WorkspaceDocument {
   schemaVersion: 1;
   project: { root: string };
   ai: { activeProfile: string; profiles: AssistantProfile[] };
-  editor: { theme: "system" | "light" | "dark"; layout: string };
+  editor: { theme: ThemePreference; layout: string };
   panels: Record<string, PanelState>;
   docs: {
     source: {
@@ -108,7 +113,7 @@ export function defaultWorkspaceDocument(root: string): WorkspaceDocument {
         },
       ],
     },
-    editor: { theme: "system", layout: "default" },
+    editor: { theme: "black", layout: "default" },
     panels: defaultWorkbenchPanels(),
     docs: {
       source: {
@@ -128,7 +133,7 @@ export function defaultWorkspaceDocument(root: string): WorkspaceDocument {
 export function parseWorkspaceDocument(source: string): WorkspaceDocument {
   const value = JSON.parse(source) as unknown;
   assertWorkspaceDocument(value);
-  return value;
+  return normalizeWorkspaceDocument(value);
 }
 
 export function serializeWorkspaceDocument(document: WorkspaceDocument): string {
@@ -161,9 +166,6 @@ function assertWorkspaceDocument(value: unknown): asserts value is WorkspaceDocu
   }
 
   const editor = requireRecord(value.editor, "workspace.editor");
-  if (editor.theme !== "system" && editor.theme !== "light" && editor.theme !== "dark") {
-    throw new Error("workspace.editor.theme is invalid");
-  }
   requireNonEmptyString(editor.layout, "workspace.editor.layout");
 
   const panels = requireRecord(value.panels, "workspace.panels");
@@ -241,10 +243,9 @@ function validateCapabilities(value: unknown, profileId: string): asserts value 
 
 function validatePanel(name: string, panel: unknown): asserts panel is PanelState {
   if (!isRecord(panel)) throw new Error(`workspace.panels.${name} must be an object`);
-  if (typeof panel.open !== "boolean") throw new Error(`workspace.panels.${name}.open must be a boolean`);
-  if (!isFiniteNumber(panel.x) || !isFiniteNumber(panel.y)) throw new Error(`workspace.panels.${name}.position is invalid`);
-  if (!isFiniteNumber(panel.width) || panel.width < 160) throw new Error(`workspace.panels.${name}.width is invalid`);
-  if (!isFiniteNumber(panel.height) || panel.height < 120) throw new Error(`workspace.panels.${name}.height is invalid`);
+  if (panel.open !== undefined && typeof panel.open !== "boolean") {
+    throw new Error(`workspace.panels.${name}.open must be a boolean`);
+  }
 }
 
 function requireRecord(value: unknown, field: string): Record<string, unknown> {
@@ -257,10 +258,21 @@ function requireNonEmptyString(value: unknown, field: string): string {
   return value;
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
+function normalizeWorkspaceDocument(document: WorkspaceDocument): WorkspaceDocument {
+  const defaults = defaultWorkbenchPanels();
+  const panels = Object.fromEntries(
+    Object.entries(document.panels).map(([name, panel]) => {
+      return [name, normalizePanelState(panel, defaults[name as keyof typeof defaults] ?? undefined)];
+    }),
+  ) as Record<string, PanelState>;
+
+  return {
+    ...document,
+    editor: { ...document.editor, theme: normalizeThemePreference(document.editor.theme) },
+    panels,
+  };
 }
 
-function isFiniteNumber(value: unknown): value is number {
-  return typeof value === "number" && Number.isFinite(value);
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
 }

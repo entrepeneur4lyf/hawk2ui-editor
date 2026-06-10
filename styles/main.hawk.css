@@ -2,48 +2,187 @@
   background-color: token(color.surface);
   color: #f4f7fb;
   font-size: 13px;
+  overflow: hidden;
+}
+
+.theme-black {
+  background-color: token(color.surface);
+  color: #f4f7fb;
+}
+
+.theme-light {
+  background-color: token(color.surface);
+  color: #111820;
 }
 
 .topbar {
+  display: flex;
+}
+
+.theme-black .topbar {
   background-color: token(color.surface);
+  border-width: 1px;
+}
+
+.theme-light .topbar {
+  background-color: token(color.surface);
+  border-width: 1px;
+}
+
+.command-group {
+  display: flex;
 }
 
 .workspace {
+  background-color: token(color.surface);
+  overflow: hidden;
+}
+
+.theme-light .workspace {
   background-color: token(color.surface);
 }
 
 .editor-workspace {
   background-color: token(color.surface);
+  overflow: hidden;
+}
+
+.theme-light .editor-workspace {
+  background-color: token(color.surface);
 }
 
 .editor-tabs {
+  display: flex;
+  background-color: token(color.surface);
+  border-width: 1px;
+}
+
+.editor-tab {
+  border-radius: 4px;
+}
+
+.editor-surface {
+  display: flex;
+}
+
+.editor-meta {
+  display: flex;
   background-color: token(color.surface);
 }
 
 .editor-buffer {
   background-color: token(color.surface);
+  border-width: 1px;
+  overflow: hidden;
 }
 
 .bottom-drawer {
   background-color: token(color.surface);
+  border-width: 1px;
+  overflow: hidden;
 }
 
 .drawer-toolbar {
+  display: flex;
   background-color: token(color.surface);
 }
 
-.status-bar {
+.drawer-body {
   background-color: token(color.surface);
+}
+
+.drawer-tab {
+  border-radius: 4px;
+}
+
+.drawer-tab-active {
+  color: #7dd3fc;
+  border-width: 1px;
+}
+
+.drawer-mode-collapsed {
+  opacity: 0.88;
+}
+
+.status-bar {
+  display: flex;
+  background-color: token(color.surface);
+  border-width: 1px;
+  font-size: 12px;
+  overflow: hidden;
 }
 
 .panel {
   background-color: token(color.surface);
   color: #f4f7fb;
+  border-width: 1px;
+  border-radius: 8px;
+  box-shadow: 0 12px 34px #000000;
+  overflow: hidden;
+}
+
+.panel-header {
+  display: flex;
+  background-color: token(color.surface);
+  border-width: 1px;
+}
+
+.panel-docked {
+  background-color: token(color.surface);
+}
+
+.panel-pinned {
+  border-width: 2px;
 }
 
 .panel-title {
   color: #ffffff;
-  font-size: 16px;
+  font-size: 15px;
+}
+
+.dock-gutter {
+  display: flex;
+  background-color: token(color.surface);
+  border-width: 1px;
+  overflow: hidden;
+}
+
+.dock-gutter-left {
+  background-color: token(color.surface);
+}
+
+.dock-gutter-right {
+  background-color: token(color.surface);
+}
+
+.dock-icon {
+  border-radius: 4px;
+  color: #9aa6b2;
+}
+
+.dock-icon-active {
+  color: #7dd3fc;
+  border-width: 1px;
+}
+
+.dock-icon-peeked {
+  color: #f0c66a;
+}
+
+.dock-icon-pinned {
+  color: #65d18f;
+}
+
+.dock-actions {
+  display: flex;
+}
+
+.settings-group {
+  display: flex;
+}
+
+.settings-choice {
+  border-radius: 4px;
 }
 
 .muted {
@@ -72,4 +211,32 @@
 
 .status-muted {
   color: #9aa6b2;
+}
+
+.theme-light .panel {
+  background-color: token(color.surface);
+  color: #111820;
+}
+
+.theme-light .bottom-drawer {
+  background-color: token(color.surface);
+  color: #111820;
+}
+
+.theme-light .status-bar {
+  background-color: token(color.surface);
+  color: #111820;
+}
+
+.theme-light .editor-buffer {
+  background-color: token(color.surface);
+  color: #111820;
+}
+
+.theme-light .muted {
+  color: #5b6673;
+}
+
+.theme-light .status-muted {
+  color: #5b6673;
 }

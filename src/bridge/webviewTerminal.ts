@@ -1,6 +1,7 @@
 import { existsSync, mkdirSync, statSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { resolveProjectPath } from "./files";
+import type { ResolvedWorkbenchTheme } from "../theme/workbenchTheme";
 
 export interface TerminalSidecarState {
   state: "closed" | "opening" | "open" | "failed";
@@ -21,6 +22,7 @@ interface TerminalSidecarPayload {
   terminalUrl: string;
   cols: number;
   rows: number;
+  theme: ResolvedWorkbenchTheme;
 }
 
 const terminalEventPrefix = "HAWK_TERMINAL_EVENT ";
@@ -68,7 +70,10 @@ export function handleTerminalSidecarMessage(message: TerminalSidecarMessage): T
   return currentTerminalSidecarState();
 }
 
-export async function openTerminalSidecar(projectRoot: string): Promise<TerminalSidecarState> {
+export async function openTerminalSidecar(
+  projectRoot: string,
+  theme: ResolvedWorkbenchTheme = "black",
+): Promise<TerminalSidecarState> {
   const root = resolveProjectPath(projectRoot, ".");
   if (!existsSync(root)) {
     const message = `project root does not exist: ${root}`;
@@ -104,6 +109,7 @@ export async function openTerminalSidecar(projectRoot: string): Promise<Terminal
       terminalUrl: `ws://127.0.0.1:${Number(process.env.HAWK2UI_EDITOR_BRIDGE_PORT ?? "47321")}/terminal?root=${encodeURIComponent(root)}`,
       cols: state.cols,
       rows: state.rows,
+      theme,
     });
 
     activeProcess?.kill();

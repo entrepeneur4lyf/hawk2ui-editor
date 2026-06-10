@@ -6,6 +6,7 @@ interface InitialTerminalState {
   terminalUrl: string;
   cols: number;
   rows: number;
+  theme?: "black" | "light";
 }
 
 declare global {
@@ -29,6 +30,7 @@ let writingFromServer = false;
 if (!terminalRoot) {
   throw new Error("missing terminal root");
 }
+document.body.classList.add(initial.theme === "light" ? "theme-light" : "theme-black");
 
 const terminal = new WTerm(terminalRoot, {
   cols: initial.cols,

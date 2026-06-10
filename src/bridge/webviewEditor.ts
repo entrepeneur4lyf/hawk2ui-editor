@@ -1,6 +1,7 @@
 import { existsSync, mkdirSync, statSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { readProjectFile, resolveProjectPath } from "./files";
+import type { ResolvedWorkbenchTheme } from "../theme/workbenchTheme";
 
 export interface EditorSidecarState {
   state: "closed" | "opening" | "open" | "failed";
@@ -28,6 +29,7 @@ interface EditorSidecarPayload {
   filePath: string;
   initialText: string;
   scriptPath: string;
+  theme: ResolvedWorkbenchTheme;
 }
 
 const editorEventPrefix = "HAWK_EDITOR_EVENT ";
@@ -109,7 +111,11 @@ export function handleEditorSidecarMessage(message: EditorSidecarMessage): Edito
   return currentEditorSidecarState();
 }
 
-export async function openEditorSidecar(projectRoot: string, relativePath: string): Promise<EditorSidecarState> {
+export async function openEditorSidecar(
+  projectRoot: string,
+  relativePath: string,
+  theme: ResolvedWorkbenchTheme = "black",
+): Promise<EditorSidecarState> {
   let resolved: string;
   try {
     resolved = resolveProjectPath(projectRoot, relativePath);
@@ -153,6 +159,7 @@ export async function openEditorSidecar(projectRoot: string, relativePath: strin
       filePath: resolved,
       initialText: file.content,
       scriptPath,
+      theme,
     });
 
     activeProcess?.kill();

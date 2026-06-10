@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { Application, Theme, WebviewApplicationEvent } from "@hawk2ui/editor-webview";
+import type { ResolvedWorkbenchTheme } from "../theme/workbenchTheme";
 
 interface TerminalSidecarPayload {
   projectRoot: string;
@@ -7,6 +8,7 @@ interface TerminalSidecarPayload {
   terminalUrl: string;
   cols: number;
   rows: number;
+  theme?: ResolvedWorkbenchTheme;
 }
 
 const payloadPath = process.argv[2];
@@ -32,8 +34,9 @@ const webview = window.createWebview({
     terminalUrl: payload.terminalUrl,
     cols: payload.cols,
     rows: payload.rows,
+    theme: payload.theme ?? "black",
   })};`,
-  theme: Theme.Dark,
+  theme: webviewTheme(payload.theme),
   clipboard: true,
 });
 
@@ -80,4 +83,8 @@ function postToParent(message: Record<string, unknown>): void {
 
 function escapeInlineScript(scriptText: string): string {
   return scriptText.replaceAll("</script", "<\\/script");
+}
+
+function webviewTheme(theme: ResolvedWorkbenchTheme | undefined): Theme {
+  return theme === "light" ? Theme.Light : Theme.Dark;
 }

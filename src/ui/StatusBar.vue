@@ -8,7 +8,8 @@ defineProps<{
 }>();
 
 function toneClass(item: StatusItem): string {
-  return `status-${item.tone}`;
+  const numeric = /[0-9:-]/.test(item.value) ? " status-mono" : "";
+  return `status-item status-${item.tone}${numeric}`;
 }
 </script>
 

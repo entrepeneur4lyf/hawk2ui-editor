@@ -2,6 +2,7 @@
 import { computed, onBeforeUnmount, onMounted, ref } from "vue";
 import AssistantPanel from "./ui/AssistantPanel.vue";
 import BottomDrawer from "./ui/BottomDrawer.vue";
+import DockGutter, { type DockPanelItem } from "./ui/DockGutter.vue";
 import DocsPanel from "./ui/DocsPanel.vue";
 import EditorWorkspace from "./ui/EditorWorkspace.vue";
 import HawkFloatingPanel from "./ui/HawkFloatingPanel.vue";
@@ -19,15 +20,26 @@ import {
   selectDocument,
 } from "./core/documents";
 import {
+  closePanel as closeWorkbenchPanel,
+  closePeekedPanel,
   createWorkbenchState,
+  dockPanel,
+  minimizePanel,
+  openPanel,
+  peekPanel,
+  pinPanel,
   selectDrawerTab,
   setDrawerMode,
   statusItemsWithPreview,
   togglePanel,
+  undockPanel,
+  unpinPanel,
+  type DockEdge,
   type DrawerMode,
   type DrawerTab,
   type WorkbenchPanelName,
 } from "./core/workbench";
+import { resolveWorkbenchTheme, themeClassName, type ThemePreference } from "./theme/workbenchTheme";
 import type { PreviewStatus } from "./preview/previewClient";
 import type { ProjectTreeEntry } from "./bridge/files";
 
@@ -94,7 +106,9 @@ interface ProblemEntry {
 }
 
 const workspace = ref(defaultWorkspaceDocument("/home/shawn/workspace/hawk2ui-editor"));
-const workbench = ref(createWorkbenchState(workspace.value.project.root));
+const initialWorkbench = createWorkbenchState(workspace.value.project.root);
+initialWorkbench.panels = workspace.value.panels as Record<WorkbenchPanelName, PanelState>;
+const workbench = ref(initialWorkbench);
 const documents = ref(createDocumentState(workbench.value.editorTabs, workbench.value.activeEditorTabId));
 const projectTree = ref<ProjectTreeEntry[]>([
   { name: "hawk.json", path: "hawk.json", type: "file" },
@@ -132,7 +146,28 @@ const terminal = ref<TerminalStatus | null>(null);
 const sidecarAvailable = computed(() => sidecar.value?.state === "open");
 const problems = computed(() => lspProblems(lsp.value, workspace.value.project.root));
 const terminalLabel = computed(() => terminal.value?.message ?? "Terminal bridge is idle.");
+const resolvedTheme = computed(() => resolveWorkbenchTheme(workspace.value.editor.theme));
+const rootClass = computed(() => `editor-root ${themeClassName(workspace.value.editor.theme)}`);
+const leftDockItems = computed(() => dockItems("left"));
+const rightDockItems = computed(() => dockItems("right"));
+const activeDockPanelId = computed(() => {
+  return panelNames.find((name) => {
+    const state = workbench.value.panels[name];
+    return state.open && state.mode !== "floating";
+  }) ?? null;
+});
+const peekedPanelId = ref<WorkbenchPanelName | null>(null);
 let statusTimer: ReturnType<typeof setInterval> | null = null;
+let peekTimer: ReturnType<typeof setTimeout> | null = null;
+
+const panelNames: WorkbenchPanelName[] = ["project", "assistant", "docs", "editorSettings", "chatSettings"];
+const panelLabels: Record<WorkbenchPanelName, string> = {
+  project: "Project",
+  assistant: "Chat",
+  docs: "Docs",
+  editorSettings: "Editor Settings",
+  chatSettings: "Chat Settings",
+};
 
 onMounted(() => {
   void refreshProjectTree();
@@ -149,17 +184,18 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   if (statusTimer) clearInterval(statusTimer);
+  if (peekTimer) clearTimeout(peekTimer);
 });
 
 function closePanel(name: WorkbenchPanelName) {
-  const panels = workbench.value.panels;
-  workbench.value.panels = { ...panels, [name]: { ...panels[name], open: false } };
+  if (peekedPanelId.value === name) peekedPanelId.value = null;
+  setWorkbenchPanels(closeWorkbenchPanel(workbench.value.panels, name));
 }
 
 function nudgePanel(name: WorkbenchPanelName, dx: number, dy: number) {
   const panels = workbench.value.panels;
   const panel = panels[name];
-  workbench.value.panels = { ...panels, [name]: { ...panel, x: panel.x + dx, y: panel.y + dy } };
+  setWorkbenchPanels({ ...panels, [name]: { ...panel, x: panel.x + dx, y: panel.y + dy } });
 }
 
 function panel(name: WorkbenchPanelName): PanelState {
@@ -167,7 +203,79 @@ function panel(name: WorkbenchPanelName): PanelState {
 }
 
 function toggleWorkbenchPanel(name: WorkbenchPanelName) {
-  workbench.value.panels = togglePanel(workbench.value.panels, name);
+  setWorkbenchPanels(togglePanel(workbench.value.panels, name));
+}
+
+function minimizeWorkbenchPanel(name: WorkbenchPanelName, edge: DockEdge = "left") {
+  if (peekedPanelId.value === name) peekedPanelId.value = null;
+  setWorkbenchPanels(minimizePanel(workbench.value.panels, name, edge));
+}
+
+function dockWorkbenchPanel(name: WorkbenchPanelName, edge: DockEdge) {
+  peekedPanelId.value = null;
+  setWorkbenchPanels(dockPanel(workbench.value.panels, name, edge));
+}
+
+function restoreWorkbenchPanel(name: WorkbenchPanelName) {
+  if (peekedPanelId.value === name) peekedPanelId.value = null;
+  setWorkbenchPanels(undockPanel(workbench.value.panels, name));
+}
+
+function pinWorkbenchPanel(name: WorkbenchPanelName) {
+  peekedPanelId.value = null;
+  setWorkbenchPanels(pinPanel(workbench.value.panels, name));
+}
+
+function unpinWorkbenchPanel(name: WorkbenchPanelName) {
+  setWorkbenchPanels(unpinPanel(workbench.value.panels, name));
+}
+
+function openDockedPanel(name: WorkbenchPanelName) {
+  if (peekTimer) clearTimeout(peekTimer);
+  peekedPanelId.value = null;
+  setWorkbenchPanels(openPanel(workbench.value.panels, name));
+}
+
+function schedulePeekPanel(name: WorkbenchPanelName) {
+  if (peekTimer) clearTimeout(peekTimer);
+  peekTimer = setTimeout(() => {
+    setWorkbenchPanels(peekPanel(workbench.value.panels, name));
+    peekedPanelId.value = name;
+  }, 240);
+}
+
+function closePeek(name: WorkbenchPanelName) {
+  if (peekTimer) clearTimeout(peekTimer);
+  if (peekedPanelId.value !== name) return;
+  setWorkbenchPanels(closePeekedPanel(workbench.value.panels, name));
+  peekedPanelId.value = null;
+}
+
+function closeActivePeek() {
+  if (peekTimer) clearTimeout(peekTimer);
+  if (!peekedPanelId.value) return;
+  const name = peekedPanelId.value;
+  setWorkbenchPanels(closePeekedPanel(workbench.value.panels, name));
+  peekedPanelId.value = null;
+}
+
+function handleRootKeydown(event: { key?: string }) {
+  if (event.key === "Escape") closeActivePeek();
+}
+
+function setEditorTheme(theme: ThemePreference) {
+  workspace.value = { ...workspace.value, editor: { ...workspace.value.editor, theme } };
+}
+
+function setWorkbenchPanels(panels: Record<WorkbenchPanelName, PanelState>) {
+  workbench.value.panels = panels;
+  workspace.value = { ...workspace.value, panels };
+}
+
+function dockItems(edge: DockEdge): DockPanelItem[] {
+  return panelNames
+    .map((name) => ({ id: name, label: panelLabels[name], ...workbench.value.panels[name] }))
+    .filter((item) => item.mode !== "floating" && item.dockEdge === edge);
 }
 
 function setActiveEditorTab(id: string) {
@@ -199,7 +307,7 @@ async function requestSidecar(path: string) {
   try {
     const state = await bridgeJson<EditorSidecarStatus>("/editor/open", {
       method: "POST",
-      body: JSON.stringify({ root: workspace.value.project.root, path }),
+      body: JSON.stringify({ root: workspace.value.project.root, path, theme: resolvedTheme.value }),
     });
     applySidecarStatus(state);
     appendLog(state.message);
@@ -216,7 +324,7 @@ async function requestTerminalSidecar() {
   try {
     const state = await bridgeJson<TerminalSidecarState>("/terminal/open", {
       method: "POST",
-      body: JSON.stringify({ root: workspace.value.project.root }),
+      body: JSON.stringify({ root: workspace.value.project.root, theme: resolvedTheme.value }),
     });
     appendLog(state.message);
     workbench.value.drawer = selectDrawerTab(setDrawerMode(workbench.value.drawer, "compact"), "terminal");
@@ -425,21 +533,22 @@ function severityLabel(severity: number | undefined): string {
 </script>
 
 <template>
-  <hawk-view id="editor-root" class="editor-root">
+  <hawk-view id="editor-root" :class="rootClass" @keydown="handleRootKeydown">
     <hawk-view id="topbar" class="topbar">
       <hawk-view id="app-brand" class="command-group">
         <hawk-text id="app-title">Hawk2UI Editor</hawk-text>
-        <hawk-text id="app-subtitle" class="muted">Single-project workbench</hawk-text>
+        <hawk-text id="app-subtitle" class="muted">Workbench</hawk-text>
       </hawk-view>
 
       <hawk-view id="command-actions" class="command-group">
         <hawk-button id="command-open">Open</hawk-button>
-        <hawk-button id="command-new-file">New File</hawk-button>
+        <hawk-button id="command-new-file">New</hawk-button>
         <hawk-button id="command-save" @pointer-press="saveEditorTab(activeTab.id)">Save</hawk-button>
         <hawk-button id="command-validate" @pointer-press="selectDrawer('problems')">Validate</hawk-button>
         <hawk-button id="command-build" @pointer-press="selectDrawer('logs')">Build</hawk-button>
         <hawk-button id="command-run" @pointer-press="preview.state = 'starting'">Run</hawk-button>
         <hawk-button id="command-stop" @pointer-press="preview.state = 'stopped'">Stop</hawk-button>
+        <hawk-button id="command-palette" @pointer-press="selectDrawer('logs')">Palette</hawk-button>
       </hawk-view>
 
       <hawk-view id="panel-launchers" class="command-group">
@@ -455,7 +564,35 @@ function severityLabel(severity: number | undefined): string {
       </hawk-view>
     </hawk-view>
 
-    <hawk-view id="workspace" class="workspace">
+    <DockGutter
+      v-if="leftDockItems.length > 0"
+      edge="left"
+      :panels="leftDockItems"
+      :active-panel-id="activeDockPanelId"
+      :peeked-panel-id="peekedPanelId"
+      @open-panel="openDockedPanel"
+      @peek-panel="schedulePeekPanel"
+      @close-peek="closePeek"
+      @pin-panel="pinWorkbenchPanel"
+      @unpin-panel="unpinWorkbenchPanel"
+      @undock-panel="restoreWorkbenchPanel"
+    />
+
+    <DockGutter
+      v-if="rightDockItems.length > 0"
+      edge="right"
+      :panels="rightDockItems"
+      :active-panel-id="activeDockPanelId"
+      :peeked-panel-id="peekedPanelId"
+      @open-panel="openDockedPanel"
+      @peek-panel="schedulePeekPanel"
+      @close-peek="closePeek"
+      @pin-panel="pinWorkbenchPanel"
+      @unpin-panel="unpinWorkbenchPanel"
+      @undock-panel="restoreWorkbenchPanel"
+    />
+
+    <hawk-view id="workspace" class="workspace" @pointer-press="closeActivePeek">
       <EditorWorkspace
         :tabs="documents.documents"
         :active-tab-id="documents.activeDocumentId ?? ''"
@@ -489,6 +626,12 @@ function severityLabel(severity: number | undefined): string {
       :panel="panel('project')"
       @close="closePanel('project')"
       @nudge="(dx, dy) => nudgePanel('project', dx, dy)"
+      @minimize="minimizeWorkbenchPanel('project', 'left')"
+      @dock-left="dockWorkbenchPanel('project', 'left')"
+      @dock-right="dockWorkbenchPanel('project', 'right')"
+      @restore="restoreWorkbenchPanel('project')"
+      @pin="pinWorkbenchPanel('project')"
+      @unpin="unpinWorkbenchPanel('project')"
     >
       <ProjectPanel :project="project" :tree="projectTree" @open-file="openProjectFile" @open-sidecar="requestSidecar" />
     </HawkFloatingPanel>
@@ -500,6 +643,12 @@ function severityLabel(severity: number | undefined): string {
       :panel="panel('assistant')"
       @close="closePanel('assistant')"
       @nudge="(dx, dy) => nudgePanel('assistant', dx, dy)"
+      @minimize="minimizeWorkbenchPanel('assistant', 'right')"
+      @dock-left="dockWorkbenchPanel('assistant', 'left')"
+      @dock-right="dockWorkbenchPanel('assistant', 'right')"
+      @restore="restoreWorkbenchPanel('assistant')"
+      @pin="pinWorkbenchPanel('assistant')"
+      @unpin="unpinWorkbenchPanel('assistant')"
     >
       <AssistantPanel :profile="profile" />
     </HawkFloatingPanel>
@@ -511,6 +660,12 @@ function severityLabel(severity: number | undefined): string {
       :panel="panel('docs')"
       @close="closePanel('docs')"
       @nudge="(dx, dy) => nudgePanel('docs', dx, dy)"
+      @minimize="minimizeWorkbenchPanel('docs', 'left')"
+      @dock-left="dockWorkbenchPanel('docs', 'left')"
+      @dock-right="dockWorkbenchPanel('docs', 'right')"
+      @restore="restoreWorkbenchPanel('docs')"
+      @pin="pinWorkbenchPanel('docs')"
+      @unpin="unpinWorkbenchPanel('docs')"
     >
       <DocsPanel :source="workspace.docs.source" @open-doc="openDoc" />
     </HawkFloatingPanel>
@@ -522,8 +677,14 @@ function severityLabel(severity: number | undefined): string {
       :panel="panel('editorSettings')"
       @close="closePanel('editorSettings')"
       @nudge="(dx, dy) => nudgePanel('editorSettings', dx, dy)"
+      @minimize="minimizeWorkbenchPanel('editorSettings', 'right')"
+      @dock-left="dockWorkbenchPanel('editorSettings', 'left')"
+      @dock-right="dockWorkbenchPanel('editorSettings', 'right')"
+      @restore="restoreWorkbenchPanel('editorSettings')"
+      @pin="pinWorkbenchPanel('editorSettings')"
+      @unpin="unpinWorkbenchPanel('editorSettings')"
     >
-      <SettingsPanel kind="editor" :theme="workspace.editor.theme" :profile="profile" />
+      <SettingsPanel kind="editor" :theme="workspace.editor.theme" :profile="profile" @update-theme="setEditorTheme" />
     </HawkFloatingPanel>
 
     <HawkFloatingPanel
@@ -533,8 +694,14 @@ function severityLabel(severity: number | undefined): string {
       :panel="panel('chatSettings')"
       @close="closePanel('chatSettings')"
       @nudge="(dx, dy) => nudgePanel('chatSettings', dx, dy)"
+      @minimize="minimizeWorkbenchPanel('chatSettings', 'right')"
+      @dock-left="dockWorkbenchPanel('chatSettings', 'left')"
+      @dock-right="dockWorkbenchPanel('chatSettings', 'right')"
+      @restore="restoreWorkbenchPanel('chatSettings')"
+      @pin="pinWorkbenchPanel('chatSettings')"
+      @unpin="unpinWorkbenchPanel('chatSettings')"
     >
-      <SettingsPanel kind="chat" :theme="workspace.editor.theme" :profile="profile" />
+      <SettingsPanel kind="chat" :theme="workspace.editor.theme" :profile="profile" @update-theme="setEditorTheme" />
     </HawkFloatingPanel>
   </hawk-view>
 </template>

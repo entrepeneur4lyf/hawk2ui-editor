@@ -13,6 +13,7 @@ import {
   receiveTerminalClientMessage,
 } from "./terminal/manager";
 import { parseTerminalClientMessage, serializeTerminalServerMessage, type TerminalServerMessage } from "./terminal/protocol";
+import { resolveWorkbenchTheme } from "../theme/workbenchTheme";
 
 const port = Number(process.env.HAWK2UI_EDITOR_BRIDGE_PORT ?? "47321");
 
@@ -154,7 +155,7 @@ export async function handleBridgeRequest(request: Request): Promise<Response> {
 
     if (request.method === "POST" && url.pathname === "/terminal/open") {
       const body = await request.json();
-      return json(await openTerminalSidecar(String(body.root)));
+      return json(await openTerminalSidecar(String(body.root), resolveWorkbenchTheme(body.theme)));
     }
 
     if (request.method === "POST" && url.pathname === "/terminal/close") {
@@ -164,9 +165,9 @@ export async function handleBridgeRequest(request: Request): Promise<Response> {
     if (request.method === "POST" && url.pathname === "/editor/open") {
       const body = await request.json();
       if (body.root && body.path) {
-        return json(await openEditorSidecar(String(body.root), String(body.path)));
+        return json(await openEditorSidecar(String(body.root), String(body.path), resolveWorkbenchTheme(body.theme)));
       }
-      return json(await openEditorSidecar(process.cwd(), String(body.filePath)));
+      return json(await openEditorSidecar(process.cwd(), String(body.filePath), resolveWorkbenchTheme(body.theme)));
     }
 
     if (request.method === "POST" && url.pathname === "/editor/close") {

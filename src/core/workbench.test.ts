@@ -1,10 +1,20 @@
 import { describe, expect, test } from "bun:test";
 import {
+  closePanel,
   createWorkbenchState,
+  defaultWorkbenchPanels,
+  dockPanel,
+  minimizePanel,
+  openPanel,
+  peekPanel,
+  pinPanel,
+  closePeekedPanel,
   selectDrawerTab,
   setDrawerMode,
   statusItemsWithPreview,
   togglePanel,
+  undockPanel,
+  unpinPanel,
   type WorkbenchPanelName,
 } from "./workbench";
 
@@ -31,6 +41,74 @@ describe("workbench shell", () => {
 
     const reopened = togglePanel(closed, panelName);
     expect(reopened.project.open).toBe(true);
+    expect(reopened.project.mode).toBe("floating");
+  });
+
+  test("minimizes, docks, pins, closes, and restores panels", () => {
+    const panels = defaultWorkbenchPanels();
+
+    const minimized = minimizePanel(panels, "project", "left");
+    expect(minimized.project).toMatchObject({
+      open: false,
+      mode: "minimized",
+      dockEdge: "left",
+      pinned: false,
+      lastFloating: { x: 20, y: 56, width: 360, height: 560 },
+    });
+
+    const docked = dockPanel(minimized, "project", "right");
+    expect(docked.project).toMatchObject({
+      open: true,
+      mode: "docked",
+      dockEdge: "right",
+      pinned: false,
+      lastFloating: { x: 20, y: 56, width: 360, height: 560 },
+    });
+
+    const pinned = pinPanel(docked, "project");
+    expect(pinned.project.pinned).toBe(true);
+
+    const unpinned = unpinPanel(pinned, "project");
+    expect(unpinned.project.pinned).toBe(false);
+
+    const closed = closePanel(unpinned, "project");
+    expect(closed.project).toMatchObject({
+      open: false,
+      mode: "docked",
+      dockEdge: "right",
+      lastFloating: { x: 20, y: 56, width: 360, height: 560 },
+    });
+
+    const restored = undockPanel(closed, "project");
+    expect(restored.project).toMatchObject({
+      open: true,
+      mode: "floating",
+      pinned: false,
+      x: 20,
+      y: 56,
+      width: 360,
+      height: 560,
+    });
+  });
+
+  test("peeks unpinned docked panels without closing pinned panels", () => {
+    const panels = minimizePanel(defaultWorkbenchPanels(), "assistant", "right");
+
+    const peeked = peekPanel(panels, "assistant");
+    expect(peeked.assistant).toMatchObject({ open: true, mode: "docked", dockEdge: "right", pinned: false });
+
+    const closed = closePeekedPanel(peeked, "assistant");
+    expect(closed.assistant).toMatchObject({ open: false, mode: "docked", dockEdge: "right", pinned: false });
+
+    const pinned = pinPanel(peeked, "assistant");
+    expect(closePeekedPanel(pinned, "assistant").assistant.open).toBe(true);
+  });
+
+  test("opens minimized panels as docked overlays", () => {
+    const panels = minimizePanel(defaultWorkbenchPanels(), "docs", "left");
+
+    const opened = openPanel(panels, "docs");
+    expect(opened.docs).toMatchObject({ open: true, mode: "docked", dockEdge: "left" });
   });
 
   test("updates bottom drawer state", () => {

@@ -19,6 +19,7 @@ interface InitialEditorState {
   rootUri?: string;
   languageId?: string;
   lspUrl?: string;
+  theme?: "black" | "light";
   text: string;
 }
 
@@ -45,6 +46,7 @@ if (!editorRoot) {
 if (fileName) {
   fileName.textContent = initial.filePath;
 }
+document.body.classList.add(initial.theme === "light" ? "theme-light" : "theme-black");
 
 const view = new EditorView({
   parent: editorRoot,
