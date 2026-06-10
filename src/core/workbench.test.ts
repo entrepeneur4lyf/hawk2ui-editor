@@ -18,6 +18,7 @@ describe("workbench shell", () => {
     expect(state.statusItems.map((item) => item.id)).toContain("bridge");
     expect(state.statusItems.map((item) => item.id)).toContain("sidecar");
     expect(state.statusItems.map((item) => item.id)).toContain("lsp");
+    expect(state.statusItems.map((item) => item.id)).toContain("terminal");
   });
 
   test("toggles recoverable floating panels without sidebars", () => {

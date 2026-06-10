@@ -23,6 +23,7 @@
     "@codemirror/view": "^6.43.1",
     "@hawk2ui/editor-webview": "^0.1.4",
     "@hawk2ui/vue": "^0.1.0",
+    "@wterm/dom": "^0.3.0",
     "ai": "^6.0.198",
     "ai-sdk-provider-claude-code": "^3.4.4",
     "ai-sdk-provider-codex-cli": "^1.2.1",

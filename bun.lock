@@ -14,6 +14,7 @@
         "@codemirror/view": "^6.43.1",
         "@hawk2ui/editor-webview": "^0.1.4",
         "@hawk2ui/vue": "^0.1.0",
+        "@wterm/dom": "^0.3.0",
         "ai": "^6.0.198",
         "ai-sdk-provider-claude-code": "^3.4.4",
         "ai-sdk-provider-codex-cli": "^1.2.1",
@@ -288,6 +289,10 @@
     "@vue/server-renderer": ["@vue/server-renderer@3.5.35", "", { "dependencies": { "@vue/compiler-ssr": "3.5.35", "@vue/shared": "3.5.35" }, "peerDependencies": { "vue": "3.5.35" } }, "sha512-NkebSOYdB97wi8OQcO3HqzZSlymJi/aWsN/7h74OSVhRTm6qGs3Jp3e0rCXynmWwSlKeRrnlIug+ilYoHBmQDA=="],
 
     "@vue/shared": ["@vue/shared@3.5.35", "", {}, "sha512-zSbjL7gRXwks2ZQLRGCajBtBXEOXW9Ddhn/HvSdrGkE2dqGnumzW8XtusRrxrE9LvqtiqDXQ+A60Hp6mvdYxfA=="],
+
+    "@wterm/core": ["@wterm/core@0.3.0", "", {}, "sha512-aQ73QBP+eyA3kcn31mA7DmAi7qmEsQijZdmvgwxtSjCi2248EAOZgtkGDpjlspfrxyVxQbUl/IF+gCVcXt4nZQ=="],
+
+    "@wterm/dom": ["@wterm/dom@0.3.0", "", { "dependencies": { "@wterm/core": "0.3.0" } }, "sha512-OiUl7reGSlW02yb5wGXMplMZhW2HBkBSFxvbFj15I832UK0QFIHRvhE2l6Xgae8ROn9bNLaALoKDFvcUuz80iQ=="],
 
     "@zag-js/accordion": ["@zag-js/accordion@1.41.2", "", { "dependencies": { "@zag-js/anatomy": "1.41.2", "@zag-js/core": "1.41.2", "@zag-js/dom-query": "1.41.2", "@zag-js/types": "1.41.2", "@zag-js/utils": "1.41.2" } }, "sha512-7G//V7svGGT8k5avw7bbQvbRC0Q/9QtX51b4iyAB1alR9E5mFd6Ch8q4njwcXClMQ7xePS3jUfVnzVGiRInEiQ=="],
 

@@ -3,44 +3,93 @@ import { listProjectTree, readProjectFile, writeProjectFile } from "./files";
 import { currentPreviewStatus, startPreview, stopPreview } from "./preview";
 import { streamAssistantText } from "./assistant";
 import { closeEditorSidecar, currentEditorSidecarState, openEditorSidecar } from "./webviewEditor";
+import { closeTerminalSidecar, currentTerminalSidecarState, openTerminalSidecar } from "./webviewTerminal";
 import { connectLspClient, currentLspStatus, disconnectLspClient, receiveLspClientMessage } from "./lsp/manager";
 import type { JsonRpcMessage } from "./lsp/protocol";
+import {
+  connectTerminalClient,
+  currentTerminalStatus,
+  disconnectTerminalClient,
+  receiveTerminalClientMessage,
+} from "./terminal/manager";
+import { parseTerminalClientMessage, serializeTerminalServerMessage, type TerminalServerMessage } from "./terminal/protocol";
 
 const port = Number(process.env.HAWK2UI_EDITOR_BRIDGE_PORT ?? "47321");
 
-interface LspSocketData {
-  root: string;
-  client: { send(message: JsonRpcMessage): void };
-}
+type BridgeSocketData =
+  | {
+      kind: "lsp";
+      root: string;
+      client: { send(message: JsonRpcMessage): void };
+    }
+  | {
+      kind: "terminal";
+      root: string;
+      client: { send(message: TerminalServerMessage): void };
+    };
 
 export function createBridgeServer() {
-  return Bun.serve<LspSocketData>({
+  return Bun.serve<BridgeSocketData>({
     port,
     fetch(request, server) {
       const url = new URL(request.url);
       if (url.pathname === "/lsp" && request.headers.get("upgrade")?.toLowerCase() === "websocket") {
         const root = url.searchParams.get("root") ?? process.cwd();
         const client = { send() {} };
-        if (server.upgrade(request, { data: { root, client } })) return;
+        if (server.upgrade(request, { data: { kind: "lsp", root, client } })) return;
+        return json({ error: "websocket upgrade failed" }, 400);
+      }
+      if (url.pathname === "/terminal" && request.headers.get("upgrade")?.toLowerCase() === "websocket") {
+        const root = url.searchParams.get("root") ?? process.cwd();
+        const client = { send() {} };
+        if (server.upgrade(request, { data: { kind: "terminal", root, client } })) return;
         return json({ error: "websocket upgrade failed" }, 400);
       }
       return handleBridgeRequest(request);
     },
     websocket: {
       open(socket) {
+        if (socket.data.kind === "lsp") {
+          socket.data.client = {
+            send(message: JsonRpcMessage) {
+              socket.send(JSON.stringify(message));
+            },
+          };
+          connectLspClient(socket.data.root, socket.data.client);
+          return;
+        }
+
         socket.data.client = {
-          send(message: JsonRpcMessage) {
-            socket.send(JSON.stringify(message));
+          send(message: TerminalServerMessage) {
+            socket.send(serializeTerminalServerMessage(message));
           },
         };
-        connectLspClient(socket.data.root, socket.data.client);
+        connectTerminalClient(socket.data.root, socket.data.client);
       },
       message(socket, message) {
         if (typeof message !== "string") return;
-        receiveLspClientMessage(socket.data.root, JSON.parse(message) as JsonRpcMessage);
+        if (socket.data.kind === "lsp") {
+          receiveLspClientMessage(socket.data.root, JSON.parse(message) as JsonRpcMessage);
+          return;
+        }
+
+        try {
+          receiveTerminalClientMessage(socket.data.root, parseTerminalClientMessage(message));
+        } catch (error) {
+          socket.send(
+            serializeTerminalServerMessage({
+              type: "error",
+              message: error instanceof Error ? error.message : "Invalid terminal message.",
+            }),
+          );
+        }
       },
       close(socket) {
-        disconnectLspClient(socket.data.root, socket.data.client);
+        if (socket.data.kind === "lsp") {
+          disconnectLspClient(socket.data.root, socket.data.client);
+          return;
+        }
+        disconnectTerminalClient(socket.data.root, socket.data.client);
       },
     },
   });
@@ -93,6 +142,23 @@ export async function handleBridgeRequest(request: Request): Promise<Response> {
 
     if (request.method === "GET" && url.pathname === "/lsp/status") {
       return json(currentLspStatus(requiredSearchParam(url, "root")));
+    }
+
+    if (request.method === "GET" && url.pathname === "/terminal/status") {
+      return json(currentTerminalStatus(requiredSearchParam(url, "root")));
+    }
+
+    if (request.method === "GET" && url.pathname === "/terminal/window/status") {
+      return json(currentTerminalSidecarState());
+    }
+
+    if (request.method === "POST" && url.pathname === "/terminal/open") {
+      const body = await request.json();
+      return json(await openTerminalSidecar(String(body.root)));
+    }
+
+    if (request.method === "POST" && url.pathname === "/terminal/close") {
+      return json(closeTerminalSidecar());
     }
 
     if (request.method === "POST" && url.pathname === "/editor/open") {

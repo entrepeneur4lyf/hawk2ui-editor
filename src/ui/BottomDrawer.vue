@@ -17,6 +17,7 @@ defineProps<{
   activeTab: DrawerTab;
   preview: PreviewStatus;
   problems: ProblemEntry[];
+  terminalLabel: string;
 }>();
 
 const emit = defineEmits<{
@@ -24,6 +25,8 @@ const emit = defineEmits<{
   setMode: [mode: DrawerMode];
   startPreview: [];
   stopPreview: [];
+  openTerminal: [];
+  closeTerminal: [];
 }>();
 
 const tabs: DrawerTab[] = ["terminal", "logs", "debug", "problems"];
@@ -47,9 +50,11 @@ const tabs: DrawerTab[] = ["terminal", "logs", "debug", "problems"];
     </hawk-view>
 
     <hawk-view v-if="mode !== 'collapsed'" id="drawer-body" class="drawer-body">
-      <hawk-text v-if="activeTab === 'terminal'" id="drawer-terminal" class="mono">
-        $ hawk2ui-cli dev
-      </hawk-text>
+      <hawk-view v-if="activeTab === 'terminal'" id="drawer-terminal">
+        <hawk-text id="drawer-terminal-status" class="mono">{{ terminalLabel }}</hawk-text>
+        <hawk-button id="drawer-open-terminal" @pointer-press="emit('openTerminal')">Open Terminal</hawk-button>
+        <hawk-button id="drawer-close-terminal" @pointer-press="emit('closeTerminal')">Close Terminal</hawk-button>
+      </hawk-view>
       <hawk-view v-if="activeTab === 'logs'" id="drawer-log-list">
         <hawk-text id="drawer-logs" class="mono">{{ previewStatusLabel(preview) }}</hawk-text>
         <hawk-text

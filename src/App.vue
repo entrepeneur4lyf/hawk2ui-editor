@@ -62,6 +62,28 @@ interface LspStatus {
   startedAt: string | null;
 }
 
+interface TerminalStatus {
+  state: "stopped" | "starting" | "running" | "exited" | "failed";
+  root: string;
+  shell: string;
+  cwd: string;
+  cols: number;
+  rows: number;
+  exitCode: number | null;
+  message: string;
+  lastError: string | null;
+  startedAt: string | null;
+}
+
+interface TerminalSidecarState {
+  state: "closed" | "opening" | "open" | "failed";
+  root: string | null;
+  cols: number;
+  rows: number;
+  lastError: string | null;
+  message: string;
+}
+
 interface ProblemEntry {
   path: string;
   line: number;
@@ -106,8 +128,10 @@ const activeTab = computed(() => activeDocument(documents.value));
 const statusItems = computed(() => statusItemsWithPreview(workbench.value.statusItems, preview.value.state));
 const sidecar = ref<EditorSidecarStatus | null>(null);
 const lsp = ref<LspStatus | null>(null);
+const terminal = ref<TerminalStatus | null>(null);
 const sidecarAvailable = computed(() => sidecar.value?.state === "open");
 const problems = computed(() => lspProblems(lsp.value, workspace.value.project.root));
+const terminalLabel = computed(() => terminal.value?.message ?? "Terminal bridge is idle.");
 let statusTimer: ReturnType<typeof setInterval> | null = null;
 
 onMounted(() => {
@@ -115,9 +139,11 @@ onMounted(() => {
   void openProjectFile("src/App.vue");
   void refreshEditorStatus();
   void refreshLspStatus();
+  void refreshTerminalStatus();
   statusTimer = setInterval(() => {
     void refreshEditorStatus();
     void refreshLspStatus();
+    void refreshTerminalStatus();
   }, 1500);
 });
 
@@ -184,6 +210,37 @@ async function requestSidecar(path: string) {
   }
 }
 
+async function requestTerminalSidecar() {
+  setStatusItem("terminal", "opening", "warn");
+  workbench.value.drawer = selectDrawerTab(setDrawerMode(workbench.value.drawer, "compact"), "terminal");
+  try {
+    const state = await bridgeJson<TerminalSidecarState>("/terminal/open", {
+      method: "POST",
+      body: JSON.stringify({ root: workspace.value.project.root }),
+    });
+    appendLog(state.message);
+    workbench.value.drawer = selectDrawerTab(setDrawerMode(workbench.value.drawer, "compact"), "terminal");
+    if (state.state === "failed") {
+      setStatusItem("terminal", "disabled", "warn");
+    }
+    setTimeout(() => void refreshTerminalStatus(), 500);
+  } catch (error) {
+    setStatusItem("terminal", "failed", "error");
+    appendLog(error instanceof Error ? error.message : "terminal sidecar failed");
+  }
+}
+
+async function closeTerminalSidecar() {
+  try {
+    const state = await bridgeJson<TerminalSidecarState>("/terminal/close", { method: "POST" });
+    appendLog(state.message);
+    workbench.value.drawer = selectDrawerTab(setDrawerMode(workbench.value.drawer, "compact"), "terminal");
+    void refreshTerminalStatus();
+  } catch (error) {
+    appendLog(error instanceof Error ? error.message : "terminal close failed");
+  }
+}
+
 function setDrawer(mode: DrawerMode) {
   workbench.value.drawer = setDrawerMode(workbench.value.drawer, mode);
 }
@@ -220,6 +277,16 @@ async function refreshLspStatus() {
     );
   } catch {
     setStatusItem("lsp", "unknown", "warn");
+  }
+}
+
+async function refreshTerminalStatus() {
+  try {
+    applyTerminalStatus(
+      await bridgeJson<TerminalStatus>(`/terminal/status?root=${encodeURIComponent(workspace.value.project.root)}`),
+    );
+  } catch {
+    setStatusItem("terminal", "unknown", "warn");
   }
 }
 
@@ -289,6 +356,26 @@ function applyLspStatus(status: LspStatus) {
   }
 
   setStatusItem("lsp", status.state === "running" ? "ready" : "off", status.state === "running" ? "ok" : "muted");
+}
+
+function applyTerminalStatus(status: TerminalStatus) {
+  terminal.value = status;
+  if (status.state === "failed" || status.lastError) {
+    setStatusItem("terminal", "failed", "error");
+    return;
+  }
+
+  if (status.state === "running") {
+    setStatusItem("terminal", `${status.cols}x${status.rows}`, "ok");
+    return;
+  }
+
+  if (status.state === "starting") {
+    setStatusItem("terminal", "starting", "warn");
+    return;
+  }
+
+  setStatusItem("terminal", status.state === "exited" ? "exited" : "off", "muted");
 }
 
 function sidecarStatusValue(status: EditorSidecarStatus): string {
@@ -384,10 +471,13 @@ function severityLabel(severity: number | undefined): string {
       :active-tab="workbench.drawer.activeTab"
       :preview="preview"
       :problems="problems"
+      :terminal-label="terminalLabel"
       @select-tab="selectDrawer"
       @set-mode="setDrawer"
       @start-preview="preview.state = 'starting'"
       @stop-preview="preview.state = 'stopped'"
+      @open-terminal="requestTerminalSidecar"
+      @close-terminal="closeTerminalSidecar"
     />
 
     <StatusBar :items="statusItems" :active-path="activeTab.path" :provider-label="profile.label" />
