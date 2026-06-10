@@ -215,6 +215,30 @@ describe("interactive workbench entry", () => {
     expect(handlerSetBoolean(artifact, "dockChatRight", "rightDockVisible")).toBe(true);
   });
 
+  test("exposes dock gutter icons for all planned floating panels", () => {
+    const source = readFileSync(join(import.meta.dir, "WorkbenchEntry.vue"), "utf8");
+    const output = compileHawkVue({ filename: "src/WorkbenchEntry.vue", source });
+    const nodes = flattenNodes(output.compilerArtifact.root as CompiledNode);
+    const artifact = output.compilerArtifact as CompiledArtifact;
+    const dockIds = [
+      "dock-left-project",
+      "dock-left-docs",
+      "dock-right-chat",
+      "dock-right-editor-settings",
+      "dock-right-chat-settings",
+    ];
+
+    for (const id of dockIds) {
+      const node = nodes.find((candidate) => candidate.id === id);
+      expect(node?.kind).toBe("button");
+      expect(node?.events?.some((event) => event.kind === "pointer.press")).toBe(true);
+    }
+
+    expect(handlerSetString(artifact, "dockDocsLeft", "activePanel")).toBe("Docs");
+    expect(handlerSetString(artifact, "dockEditorSettingsRight", "activePanel")).toBe("Editor Settings");
+    expect(handlerSetString(artifact, "dockChatSettingsRight", "activePanel")).toBe("Chat Settings");
+  });
+
   test("keeps fixed desktop chrome widths within their parent regions", () => {
     const source = readFileSync(join(import.meta.dir, "WorkbenchEntry.vue"), "utf8");
     const output = compileHawkVue({ filename: "src/WorkbenchEntry.vue", source });

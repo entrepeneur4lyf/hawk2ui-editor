@@ -235,6 +235,15 @@ function dockProjectLeft() {
   status.value = "Project docked left";
 }
 
+function dockDocsLeft() {
+  activePanel.value = "Docs";
+  panelMode.value = "docked left";
+  leftDockVisible.value = true;
+  panelBodyPrimary.value = "Docs browser: specs and plans open as editor tabs.";
+  panelBodySecondary.value = "Use docs tabs for workbench UX, editor, and AI chat specifications.";
+  status.value = "Docs docked left";
+}
+
 function dockChatRight() {
   activePanel.value = "Chat";
   panelMode.value = "docked right";
@@ -242,6 +251,24 @@ function dockChatRight() {
   panelBodyPrimary.value = "Checkpoint chat: current implementation slice is active.";
   panelBodySecondary.value = "Assistant tools can create checkpoints and mark work complete later.";
   status.value = "Chat docked right";
+}
+
+function dockEditorSettingsRight() {
+  activePanel.value = "Editor Settings";
+  panelMode.value = "docked right";
+  rightDockVisible.value = true;
+  panelBodyPrimary.value = "Editor settings: black theme, monospace code, sidecar auto-start.";
+  panelBodySecondary.value = "Future controls: font size, wrapping, tab width, and diagnostics.";
+  status.value = "Editor settings docked right";
+}
+
+function dockChatSettingsRight() {
+  activePanel.value = "Chat Settings";
+  panelMode.value = "docked right";
+  rightDockVisible.value = true;
+  panelBodyPrimary.value = "Chat settings: provider profiles stay behind the bridge.";
+  panelBodySecondary.value = "Profiles can switch Codex, Claude Code, NIM, or local-compatible endpoints.";
+  status.value = "Chat settings docked right";
 }
 
 function openTerminal() {
@@ -289,6 +316,9 @@ function openTerminal() {
         <hawk-button id="dock-left-project" class="dock-icon" width="30" height="30" @pointerdown="dockProjectLeft">
           P
         </hawk-button>
+        <hawk-button id="dock-left-docs" class="dock-icon" width="30" height="30" @pointerdown="dockDocsLeft">
+          D
+        </hawk-button>
       </hawk-view>
 
       <hawk-view id="editor-workspace" class="editor-workspace" width="1280" :height="workspaceHeight">
@@ -317,6 +347,24 @@ function openTerminal() {
       >
         <hawk-button id="dock-right-chat" class="dock-icon" width="30" height="30" @pointerdown="dockChatRight">
           C
+        </hawk-button>
+        <hawk-button
+          id="dock-right-editor-settings"
+          class="dock-icon"
+          width="30"
+          height="30"
+          @pointerdown="dockEditorSettingsRight"
+        >
+          E
+        </hawk-button>
+        <hawk-button
+          id="dock-right-chat-settings"
+          class="dock-icon"
+          width="30"
+          height="30"
+          @pointerdown="dockChatSettingsRight"
+        >
+          S
         </hawk-button>
       </hawk-view>
 
