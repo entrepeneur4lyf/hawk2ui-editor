@@ -34,7 +34,7 @@ export function mount(): NativeNode {
       fontSize: 22,
       height: 32,
     }),
-    text("command-bar", "File  Edit  Selection  View  Go  Run  Terminal  Help    Explorer  Search  Chat  Docs  Settings", {
+    text("command-bar", "Open  New  Save    Validate  Build  Run  Stop  Palette    Project  Chat  Docs  Editor  Chat Cfg", {
       backgroundColor: palette.chrome,
       color: palette.muted,
       fontSize: 14,
@@ -57,7 +57,7 @@ export function mount(): NativeNode {
         fontSize: 16,
         height: 28,
       }),
-      text("editor-line-2", "2    <CommandBar @open-panel=\"showFloatingPanel\" />", {
+      text("editor-line-2", "2    <CommandBar commands=\"project run panels\" />", {
         color: "#93c5fd",
         fontSize: 16,
         height: 28,
@@ -67,17 +67,22 @@ export function mount(): NativeNode {
         fontSize: 16,
         height: 28,
       }),
-      text("editor-line-4", "4    <BottomDrawer active=\"terminal\" />", {
+      text("editor-line-4", "4    <Dock gutters=\"left right\" overlay />", {
         color: "#5eead4",
         fontSize: 16,
         height: 28,
       }),
-      text("editor-line-5", "5    <StatusBar tone=\"ready\" />", {
+      text("editor-line-5", "5    <BottomDrawer active=\"terminal\" />", {
         color: "#86efac",
         fontSize: 16,
         height: 28,
       }),
-      text("editor-line-6", "6  </hawk-view>", {
+      text("editor-line-6", "6    <StatusBar bridge=\"ready\" />", {
+        color: "#86efac",
+        fontSize: 16,
+        height: 28,
+      }),
+      text("editor-line-7", "7  </hawk-view>", {
         color: "#c4b5fd",
         fontSize: 16,
         height: 28,
@@ -99,8 +104,13 @@ export function mount(): NativeNode {
         fontSize: 14,
         height: 26,
       }),
+      text("drawer-body-3", "Dock gutters: minimized and docked panels reopen as overlays", {
+        color: palette.accent,
+        fontSize: 14,
+        height: 26,
+      }),
     ]),
-    text("status-bar", "Ready  |  project: hawk2ui-editor  |  bridge: local  |  LSP: planned  |  terminal: planned  |  preview: stopped", {
+    text("status-bar", "Ready  |  project: hawk2ui-editor  |  bridge: local  |  LSP: bridge ready  |  Terminal: bridge ready  |  preview: stopped", {
       backgroundColor: "#11395f",
       color: palette.text,
       fontSize: 13,

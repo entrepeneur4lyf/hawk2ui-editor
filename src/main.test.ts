@@ -22,5 +22,10 @@ describe("native desktop entry", () => {
     expect(ids).toContain("status-bar");
     expect(source).toContain("Hawk2UI Editor");
     expect(source).toContain("Terminal");
+    expect(source).toContain("Project  Chat  Docs  Editor  Chat Cfg");
+    expect(source).toContain("Dock gutters");
+    expect(source).toContain("LSP: bridge ready");
+    expect(source).toContain("Terminal: bridge ready");
+    expect(source).not.toContain("planned");
   });
 });
