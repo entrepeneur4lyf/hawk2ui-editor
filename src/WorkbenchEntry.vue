@@ -167,6 +167,30 @@ function openEditorSidecar() {
   status.value = "Editor sidecar requested";
 }
 
+function selectTerminalTab() {
+  drawerTab.value = "Terminal";
+  drawerBody.value = "Terminal bridge ready. Webview terminal opens through the bridge sidecar.";
+  status.value = "Terminal drawer active";
+}
+
+function selectLogsTab() {
+  drawerTab.value = "Logs";
+  drawerBody.value = "Bridge idle. Use Validate, Build, Run, or Terminal.";
+  status.value = "Logs drawer active";
+}
+
+function selectDebugTab() {
+  drawerTab.value = "Debug";
+  drawerBody.value = "Preview debugger idle.";
+  status.value = "Debug drawer active";
+}
+
+function selectProblemsTab() {
+  drawerTab.value = "Problems";
+  drawerBody.value = "No validation problems.";
+  status.value = "Problems drawer active";
+}
+
 function collapseDrawer() {
   drawerMode.value = "collapsed";
   drawerHeight.value = 36;
@@ -293,7 +317,12 @@ function openTerminal() {
 
     <hawk-view id="bottom-drawer" class="bottom-drawer" width="1280" :height="drawerHeight">
       <hawk-view id="drawer-toolbar" class="drawer-toolbar" width="1280" height="34">
-        <hawk-text id="drawer-tabs" width="392" height="28">Terminal | Logs | Debug | Problems</hawk-text>
+        <hawk-view id="drawer-tabs" class="drawer-tabs" width="392" height="34">
+          <hawk-button id="drawer-tab-terminal" width="98" @pointerdown="selectTerminalTab">Terminal</hawk-button>
+          <hawk-button id="drawer-tab-logs" width="78" @pointerdown="selectLogsTab">Logs</hawk-button>
+          <hawk-button id="drawer-tab-debug" width="80" @pointerdown="selectDebugTab">Debug</hawk-button>
+          <hawk-button id="drawer-tab-problems" width="104" @pointerdown="selectProblemsTab">Problems</hawk-button>
+        </hawk-view>
         <hawk-button id="drawer-collapse" width="86" @pointerdown="collapseDrawer">Collapse</hawk-button>
         <hawk-button id="drawer-compact" width="78" @pointerdown="compactDrawer">Compact</hawk-button>
         <hawk-button id="drawer-expand" width="72" @pointerdown="expandDrawer">Expand</hawk-button>

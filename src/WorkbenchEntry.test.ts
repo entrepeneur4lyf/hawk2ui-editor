@@ -105,6 +105,23 @@ describe("interactive workbench entry", () => {
     expect(handlerSetString(artifact, "openEditorSidecar", "sidecarState")).toBe("requested");
   });
 
+  test("exposes bottom drawer tabs as stateful controls", () => {
+    const source = readFileSync(join(import.meta.dir, "WorkbenchEntry.vue"), "utf8");
+    const output = compileHawkVue({ filename: "src/WorkbenchEntry.vue", source });
+    const nodes = flattenNodes(output.compilerArtifact.root as CompiledNode);
+    const artifact = output.compilerArtifact as CompiledArtifact;
+
+    for (const id of ["drawer-tab-terminal", "drawer-tab-logs", "drawer-tab-debug", "drawer-tab-problems"]) {
+      const node = nodes.find((candidate) => candidate.id === id);
+      expect(node?.kind).toBe("button");
+      expect(node?.events?.some((event) => event.kind === "pointer.press")).toBe(true);
+    }
+
+    expect(dynamicInitialString(artifact, "drawerTab")).toBe("Logs");
+    expect(handlerSetString(artifact, "selectProblemsTab", "drawerTab")).toBe("Problems");
+    expect(handlerSetString(artifact, "selectProblemsTab", "drawerBody")).toBe("No validation problems.");
+  });
+
   test("groups topbar commands into project, run, panel, and overflow clusters", () => {
     const source = readFileSync(join(import.meta.dir, "WorkbenchEntry.vue"), "utf8");
     const output = compileHawkVue({ filename: "src/WorkbenchEntry.vue", source });
