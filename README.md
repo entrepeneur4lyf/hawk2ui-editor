@@ -1,6 +1,6 @@
 # Hawk2UI Editor
 
-Local dogfood app for building a Hawk2UI single-project editor with Vue.
+Local dogfood app for building a Hawk2UI single-project editor. The desktop runtime mounts a native workbench shell, while DOM-heavy editor features live in optional webview sidecars.
 
 ## Commands
 

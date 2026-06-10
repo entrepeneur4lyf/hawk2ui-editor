@@ -9,7 +9,7 @@
   },
   "app": {
     "entry": "src/main.ts",
-    "framework": "vue",
+    "framework": "native",
     "style": "styles/main.hawk.css"
   },
   "build": {
