@@ -8,7 +8,7 @@
     "build": "vite build --config vite.hawk.config.ts",
     "build:artifact": "hawk2ui-cli build-release",
     "bridge": "bun src/bridge/server.ts",
-    "dev": "hawk2ui-cli dev",
+    "dev": "bun src/dev/main.ts",
     "test": "bun test",
     "validate": "hawk2ui-cli validate",
     "verify": "bun test && bun run build && hawk2ui-cli validate"

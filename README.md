@@ -9,7 +9,7 @@ Local dogfood app for building a Hawk2UI single-project editor. The desktop runt
 - `bun run build`
 - `hawk2ui-cli validate`
 - `bun run bridge`
-- `hawk2ui-cli dev`
+- `bun run dev`
 
 `workspace.hawk` is local-only and ignored by git. Store API keys in environment variables such as `OPENAI_API_KEY` or `NIM_API_KEY`, not in project files.
 
@@ -17,13 +17,19 @@ Local dogfood app for building a Hawk2UI single-project editor. The desktop runt
 
 The code editor window is an example-only webview sidecar. Hawk2UI renders the interactive workbench shell; `@hawk2ui/editor-webview` hosts DOM-heavy editor widgets such as CodeMirror. This app uses the sidecar to demonstrate interop for developers who need a webview, but the sidecar package remains an optional editor-app dependency rather than core Hawk2UI framework functionality.
 
-Start the bridge to launch the default editor sidecar automatically for `src/App.vue`:
+Start the full editor with the bridge and default editor sidecar:
+
+```bash
+bun run dev
+```
+
+The dev main process starts the Bun bridge, launches the `src/App.vue` CodeMirror sidecar automatically, then starts `hawk2ui-cli dev`. Start only the bridge for backend checks with:
 
 ```bash
 bun run bridge
 ```
 
-The bridge main process owns sidecar startup. Override the initial file with `HAWK2UI_EDITOR_INITIAL_FILE=path/to/file`, or suppress automatic startup with `HAWK2UI_EDITOR_WEBVIEW_SIDECAR=0`. Manual `POST /editor/open` remains available with `{ root, path }`; the sidecar reads and saves through the root-confined file helpers. Use `POST /editor/close` to stop the active sidecar during local verification.
+The bridge main process owns sidecar startup in both modes. Override the initial file with `HAWK2UI_EDITOR_INITIAL_FILE=path/to/file`, or suppress automatic startup with `HAWK2UI_EDITOR_WEBVIEW_SIDECAR=0`. Manual `POST /editor/open` remains available with `{ root, path }`; the sidecar reads and saves through the root-confined file helpers. Use `POST /editor/close` to stop the active sidecar during local verification.
 
 The published package provides native optional packages for the supported desktop targets. Verify the local install with:
 
